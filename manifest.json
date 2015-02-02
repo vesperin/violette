@@ -1,0 +1,111 @@
+{
+  "name": "Violette",
+  "version": "0.0.1",
+  "manifest_version": 2,
+  "icons": {
+    "16": "img/icon16.png",
+    "24": "img/icon24.png",
+    "32": "img/icon32.png",
+    "48": "img/icon48.png",
+    "64": "img/icon64.png",
+    "128": "img/icon128.png",
+    "256": "img/icon256.png"
+  },
+  "description": "A plugin for scouring Java source code on Stackoverflow.",
+  "homepage_url": "https://github.com/chefedited/vesper-web",
+  "background": {
+    "scripts": [
+      "js/jquery/jquery.min.js",
+      "js/background.js"
+    ],
+
+    "persistent": false
+  },
+
+  "page_action": {
+    "default_icon": "img/favicon.ico",
+    "default_title": "Start curating Java source code on StackOverflow (soon GitHub)."
+  },
+
+  "web_accessible_resources": [
+    "vendor/font-awesome-4.0.3/fonts/*",
+    "vendor/font-awesome-4.0.3/css/font-awesome.css",
+    "vendor/octicons/octicons.css",
+    "vendor/octicons/*",
+    "js/deps/jquery-1.11.1.js",
+    "js/vesper.js"
+  ],
+
+  "content_scripts": [
+    {
+      "matches": ["*://stackoverflow.com/*/*"],
+      "exclude_globs": ["*.com/blog*", "*.com/explore*", "*.com/settings*", "*.com/inbox*", "*.com/repositories*", "*.com/popular*"],
+      "css": [
+        "vendor/font-awesome-4.0.3/css/font-awesome.css",
+        "vendor/octicons/octicons.css",
+        "css/bootstrap.min.css",
+        "css/codemirror.css",
+        "css/clean-scrollbar.css",
+        "css/foldgutter.css",
+        "css/jquery.nouislider.tooltipped.css",
+        "css/tooltipster.css",
+        "css/toastr.min.css",
+        "css/dialog.css",
+        "css/overrides.css",
+        "css/bootstrap-tagsinput.css",
+        "css/tomorrow.min.css",
+        "css/vesper-scratchspace.css"
+      ],
+
+      "js": [
+        "js/deps/codemirror.js",
+        "js/deps/clike.js",
+        "js/deps/foldcode.js",
+        "js/deps/foldgutter.js",
+        "js/deps/comment-fold.js",
+        "js/deps/brace-fold.js",
+        "js/deps/search.js",
+        "js/deps/searchcursor.js",
+        "js/deps/active-line.js",
+        "js/deps/mark-selection.js",
+        "js/deps/matchbrackets.js",
+        "js/deps/dialog.js",
+        "js/deps/jquery-1.11.1.js",
+        "js/deps/highlight.min.js",
+        "js/deps/bootstrap.min.js",
+        "js/deps/bootstrap-tagsinput.js",
+        "js/deps/bootbox.min.js",
+        "js/deps/jquery.nouislider.min.js",
+        "js/deps/jquery.starrr.min.js",
+        "js/deps/jquery.tooltipster.js",
+        "js/deps/screenfull.min.js",
+        "js/deps/toastr.min.js",
+        "js/deps/idle-timer.min.js",
+        "js/vesper/set.js",
+        "js/vesper/stopwatch.js",
+        "js/vesper/toastr-octicons.js",
+        "js/vesper/utils.js",
+        "js/vesper/html.js",
+        "js/vesper/heuristics.js",
+        "js/vesper/restfulcalls.js",
+        "js/vesper/refactorings.js",
+        "js/vesper/comments.js",
+        "js/vesper/commit.js",
+        "js/vesper/commithistory.js",
+        "js/vesper/slowdown.js",
+        "js/vesper/prettyprint.js",
+        "js/vesper/scratchspace.js",
+        "js/stirred-vesper.js",
+        "js/vesper.js"
+
+      ]
+    }
+  ],
+
+  "permissions": [
+    "tabs",
+    "http://stackoverflow.com/*",
+    "http://www.vesperin.com/*",
+    "http://www.cookandstuff.com/*"
+  ]
+}
