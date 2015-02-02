@@ -1,0 +1,20 @@
+.CodeMirror-foldmarker {
+  color: blue;
+  text-shadow: #b9f 1px 1px 2px, #b9f -1px -1px 2px, #b9f 1px -1px 2px, #b9f -1px 1px 2px;
+  font-family: arial;
+  line-height: .3;
+  cursor: pointer;
+}
+.Editor-foldgutter {
+  width: .7em;
+}
+.Editor-foldgutter-open,
+.Editor-foldgutter-folded {
+  cursor: pointer;
+}
+.Editor-foldgutter-open:after {
+  content: "\25BE";
+}
+.Editor-foldgutter-folded:after {
+  content: "\25B8";
+}
