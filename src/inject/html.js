@@ -60,8 +60,8 @@ var Html = (function ($, module) {
       'class': 'violette-footer  btn-toolbar'
     }, {});
 
-    bottom = buildLeftBox(v, bottom, v.modes);
-    bottom = buildRightBox(v, bottom, v.social);
+    bottom = buildLeftBox(v, bottom, v.options.modes);
+    bottom = buildRightBox(v, bottom, v.options.social);
 
     return bottom;
   };
@@ -161,6 +161,7 @@ var Html = (function ($, module) {
 
       var buttonHtml = module.buildHtml('button', iconStr, {
         'type': 'button'
+        , 'class': 'violette-button btn-dark-link'
         , 'title': title
         , 'data-provider': v.namespace
         , 'data-handler': handler

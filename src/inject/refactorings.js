@@ -7,8 +7,8 @@
 var Refactoring = (function (module) {
   "use strict";
 
-  var postUrl = RestfulCall.SERVICE_POST_URL;
-  var getUrl = RestfulCall.SERVICE_GET_URL;
+  var postUrl = Calls.SERVICE_POST_URL;
+  var getUrl = Calls.SERVICE_GET_URL;
 
   module.deleteSelection = function (name, content, range, callback) {
     var start = range.start;
@@ -24,7 +24,7 @@ var Refactoring = (function (module) {
       }
     };
 
-    RestfulCall.post(postUrl, request, null, callback/*(reply)*/);
+    Calls.post(postUrl, request, null, callback/*(reply)*/);
   };
 
 
@@ -39,7 +39,7 @@ var Refactoring = (function (module) {
       }
     };
 
-    RestfulCall.post(postUrl, request, null, callback/*(reply)*/);
+    Calls.post(postUrl, request, null, callback/*(reply)*/);
   };
 
   module.inspectWholeSourcecode = function (name, content, callback) {
@@ -53,7 +53,7 @@ var Refactoring = (function (module) {
       }
     };
 
-    RestfulCall.post(postUrl, request, null, callback/*(reply)*/);
+    Calls.post(postUrl, request, null, callback/*(reply)*/);
   };
 
   module.renameSelectedMember = function (name, newName, content, range, callback) {
@@ -71,7 +71,7 @@ var Refactoring = (function (module) {
       }
     };
 
-    RestfulCall.post(postUrl, request, null, callback/*(reply)*/);
+    Calls.post(postUrl, request, null, callback/*(reply)*/);
   };
 
 
@@ -88,7 +88,7 @@ var Refactoring = (function (module) {
       }
     };
 
-    RestfulCall.post(postUrl, request, null, callback/*(reply)*/);
+    Calls.post(postUrl, request, null, callback/*(reply)*/);
   };
 
 
@@ -101,7 +101,7 @@ var Refactoring = (function (module) {
       }
     };
 
-    RestfulCall.post(postUrl, request, null, callback/*(reply)*/);
+    Calls.post(postUrl, request, null, callback/*(reply)*/);
   };
 
   module.fullCleanup = function (name, content, callback) {
@@ -113,7 +113,7 @@ var Refactoring = (function (module) {
       }
     };
 
-    RestfulCall.post(postUrl, request, null, callback/*(reply)*/);
+    Calls.post(postUrl, request, null, callback/*(reply)*/);
   };
 
 
@@ -126,7 +126,7 @@ var Refactoring = (function (module) {
       }
     };
 
-    RestfulCall.post(postUrl, request, null, callback/*(reply)*/);
+    Calls.post(postUrl, request, null, callback/*(reply)*/);
   };
 
   module.format = function (name, content, callback) {
@@ -138,12 +138,12 @@ var Refactoring = (function (module) {
       }
     };
 
-    RestfulCall.post(postUrl, request, null, callback/*(reply)*/);
+    Calls.post(postUrl, request, null, callback/*(reply)*/);
   };
 
 
   module.getParticipants = function (callback) {
-    RestfulCall.get(getUrl, null, callback/*(reply)*/);
+    Calls.get(getUrl, null, callback/*(reply)*/);
   };
 
 
@@ -154,7 +154,7 @@ var Refactoring = (function (module) {
       }
     };
 
-    RestfulCall.put(postUrl, request, null, callback);
+    Calls.put(postUrl, request, null, callback);
   };
 
   return module;

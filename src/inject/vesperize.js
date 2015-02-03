@@ -38,7 +38,7 @@ var Vesperize = (function ($) {
 
     v.fit();
 
-    var that = this;
+    var that = v;
     var efficientCallback = Utils.debounce(function(){
        that.fit();
     }, 250, false);
@@ -154,7 +154,17 @@ var Vesperize = (function ($) {
     , height: 'inherit'
     , hideable: false
     , intervalinmillis: 5000
-    , 'actions':  []
+    , 'actions':  [
+      {
+        name: 'summary'
+        , title: 'Summarize code example'
+        /*No label; we'll use tooltips */
+        , icon: 'octicon octicon-fold'
+        , callback: function (v/*Violette*/) {
+        // todo(Huascar) implement
+        }
+      }
+    ]
     , 'modes':  []
     , 'social': []
   };
@@ -275,7 +285,7 @@ var Vesperize = (function ($) {
 
       // this will adjust height of code mirror
       var grow      = 13.45;
-      var heightVal = ($(textarea).val().split(/\r\n|\r|\n/).length);
+      var heightVal = ($(this.textarea).val().split(/\r\n|\r|\n/).length);
 
       var editorHeight  = ((heightVal <= 25)? heightVal * grow : ((heightVal + 10) * grow));
       this.codemirror.setSize("100%", editorHeight);
@@ -494,7 +504,9 @@ var Vesperize = (function ($) {
   };
 
 
-  Vesperize.prototype.fit = function(){};
+  Vesperize.prototype.fit = function(){
+    this.codemirror.refresh();
+  };
 
   return Vesperize;
 }(window.jQuery));

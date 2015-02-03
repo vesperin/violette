@@ -7,7 +7,17 @@ module.exports = function(grunt) {
         separator: ';'
       },
       dist: {
-        src: ['src/inject/*.js'],
+        src: [
+          'src/inject/utils.js'
+          , 'src/inject/matcher.js'
+          , 'src/inject/html.js'
+          , 'src/inject/stopwatch.js'
+          , 'src/inject/restfulcalls.js'
+          , 'src/inject/refactorings.js'
+          , 'src/inject/heuristics.js'
+          , 'src/inject/vesperize.js'
+          , 'src/inject/violette.js'
+        ],
         dest: 'lib/<%= pkg.name %>.js'
       }
     },

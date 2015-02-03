@@ -4,7 +4,7 @@
  *
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-var RestfulCall = (function ($, module) {
+var Calls = (function ($, module) {
   "use strict";
 
   module.ACTIVE = true;
@@ -110,4 +110,4 @@ var RestfulCall = (function ($, module) {
 
   return module;
 
-}(window.jQuery, RestfulCall || {}));
+}(window.jQuery, Calls || {}));
