@@ -57,7 +57,9 @@ var Refactoring = (function (module) {
     Calls.post(postUrl, request, null, callback/*(reply)*/);
   };
 
-  module.renameSelectedMember = function (name, newName, content, range, callback) {
+  module.renameSelectedMember = function (name, newName,
+         content, range, preprocess, callback) {
+
     var start = range.start;
     var end = range.end;
 
@@ -68,7 +70,8 @@ var Refactoring = (function (module) {
         'what': 'member',
         'to': newName,
         'where': [start, end],
-        'source': source
+        'source': source,
+        'preprocess': preprocess
       }
     };
 
@@ -76,7 +79,9 @@ var Refactoring = (function (module) {
   };
 
 
-  module.clipSelectedBlock = function (name, content, range, callback) {
+  module.clipSelectedBlock = function (name, content,
+         range, preprocess, callback) {
+
     var start = range.start;
     var end = range.end;
 
@@ -85,7 +90,8 @@ var Refactoring = (function (module) {
     var request = {
       'slice': {
         'source': source,
-        'where': [start, end]
+        'where': [start, end],
+        'preprocess': preprocess
       }
     };
 
@@ -93,24 +99,26 @@ var Refactoring = (function (module) {
   };
 
 
-  module.deduplicate = function (name, content, callback) {
+  module.deduplicate = function (name, content, preprocess, callback) {
     var source = Utils.createCode(name, 'Java: *scratched* code snippet', content);
 
     var request = {
       'deduplicate': {
         'source': source
+        , 'preprocess': preprocess
       }
     };
 
     Calls.post(postUrl, request, null, callback/*(reply)*/);
   };
 
-  module.fullCleanup = function (name, content, callback) {
+  module.fullCleanup = function (name, content, preprocess, callback) {
     var source = Utils.createCode(name, 'Java: *scratched* code snippet', content);
 
     var request = {
       'cleanup': {
         'source': source
+        , 'preprocess': preprocess
       }
     };
 
@@ -136,6 +144,21 @@ var Refactoring = (function (module) {
     var request = {
       'format': {
         'source': source
+      }
+    };
+
+    Calls.post(postUrl, request, null, callback/*(reply)*/);
+  };
+
+
+  module.multistageCode = function (name, content, preprocess, callback) {
+    var source = Utils.createCode(name, 'Java: *scratched* code snippet', content);
+
+    var request = {
+      'multistage': {
+        'source': source
+        , 'budget': 15
+        , 'preprocess': preprocess
       }
     };
 

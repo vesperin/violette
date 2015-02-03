@@ -1,5 +1,5 @@
 /**
- * @author Huascar A. Sanchez
+ * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
 var Html = (function ($, module) {
   "use strict";

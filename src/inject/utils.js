@@ -1,5 +1,5 @@
 /**
- * @author Huascar A. Sanchez
+ * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
 var Utils = (function ($, module) {
   "use strict";
