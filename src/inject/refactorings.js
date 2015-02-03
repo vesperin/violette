@@ -10,7 +10,7 @@ var Refactoring = (function (module) {
   var postUrl = Calls.SERVICE_POST_URL;
   var getUrl = Calls.SERVICE_GET_URL;
 
-  module.deleteSelection = function (name, content, range, callback) {
+  module.deleteSelection = function (name, content, range, preprocess, callback) {
     var start = range.start;
     var end = range.end;
 
@@ -20,7 +20,8 @@ var Refactoring = (function (module) {
       'remove': {
         'what': 'region',
         'where': [start, end],
-        'source': source
+        'source': source,
+        'preprocess': preprocess
       }
     };
 

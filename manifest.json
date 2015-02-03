@@ -31,7 +31,7 @@
     "fonts/octicons/octicons.css",
     "fonts/octicons/*",
     "js/jquery/jquery.min.js",
-    "lib/violette.min.js"
+    "lib/violette.js"
   ],
 
   "content_scripts": [
@@ -67,7 +67,7 @@
         "js/screenfull/screenfull.min.js",
         "js/jquery/idle-timer.min.js",
         "js/setjs/set.js",
-        "lib/violette.min.js"
+        "lib/violette.js"
 
       ]
     }

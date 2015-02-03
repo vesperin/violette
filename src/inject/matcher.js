@@ -41,6 +41,28 @@ var Matcher = (function ($, module) {
   }
 
   /**
+   * Checks whether a given text is a Java import.
+   *
+   * @param text the text to be inspected.
+   * @return {boolean} true if it is; false otherwise.
+   */
+  function isImport(text){
+    var pattern = /import[^;=\n]*\s[\S\s]*?(?=;)/;
+    return matches(text, pattern);
+  }
+
+  /**
+   * Checks whether a given text is a Java class.
+   *
+   * @param text the text to be inspected.
+   * @return {boolean} true if it is; false otherwise.
+   */
+  function isClass(text){
+    var pattern = /class[^;=\n]*\s[\S\s]*?(?={)/;
+    return matches(text, pattern);
+  }
+
+  /**
    * Checks whether a given text is a Java method.
    *
    * @param text text the text to be inspected.
@@ -74,11 +96,12 @@ var Matcher = (function ($, module) {
     return result ? result : defaultName;
   }
 
-
   module.matches        = matches;
   module.isComment      = isComment;
   module.isMethod       = isMethod;
   module.matchClassName = matchClassName;
+  module.isImport       = isImport;
+  module.isClass        = isClass;
 
 
   return module;

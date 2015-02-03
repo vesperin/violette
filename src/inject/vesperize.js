@@ -35,6 +35,10 @@ var Vesperize = (function ($) {
     v.status.text('SAVED ');
   }
 
+  function requiresPreprocessing(reply){
+    return ((typeof(reply.warnings) !== 'undefined' && reply.warnings.length > 0) || (typeof(reply.failure) !== 'undefined'));
+  }
+
   /**
    * Performs any post processing task after Vesperize has been initialized.
    * @param v Vesperize object
@@ -145,6 +149,8 @@ var Vesperize = (function ($) {
         // a bar that appears above the footer
       }
     }
+
+    codemirror.focus();
   }
 
 
@@ -161,12 +167,57 @@ var Vesperize = (function ($) {
     , intervalinmillis: 5000
     , 'actions':  [
       {
-        name: 'summary'
-        , title: 'Summarize code example'
-        /*No label; we'll use tooltips */
-        , icon: 'octicon octicon-fold'
+        name: 'delete'
+        , title: 'Safely delete a code element; e.g., method, class, block.'
+        , icon: 'octicon octicon-trashcan'
         , callback: function (v/*Violette*/) {
-        // todo(Huascar) implement
+          var codemirror = v.codemirror;
+          var content = codemirror.getValue();
+
+          // nothing to refactor.
+          if ("" == content) return;
+
+          var selection = codemirror.getSelection();
+
+          if ("" === selection) {
+            //Logger.warn("There is nothing to delete.");
+          } else if (selection === content) {
+            //Logger.warn("There won't be any example left after this deletion.");
+          } else {
+            // extract classname from content
+            v.classname = compareAndSetClassName(content, v.classname, v);
+            // extract selection range
+            var range = Utils.selectionOffsets(codemirror, content, selection);
+            // check if its comment
+            if (Matcher.isComment(selection)) {
+              // if the selection is a comment, then remove it
+              // then call the Refactoring.prepare...
+              content = content.replace(selection, '');
+
+              // doing this we allow us to fix issues related to
+              // have a clean version of code snippet
+              Refactoring.format(v.classname, content, function (reply) {
+                handleReply(v, reply);
+              });
+
+            } else {
+
+              Refactoring.inspectWholeSourcecode(v.classname, content,
+                function (reply) {
+
+                  var preprocess = requiresPreprocessing(reply);
+                  Refactoring.deleteSelection(
+                    v.classname, content, range, preprocess, function (reply) {
+                      handleReply(v, reply);
+                    }
+                  );
+
+                }
+              );
+
+
+            }
+          }
         }
       }
     ]

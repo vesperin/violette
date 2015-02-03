@@ -159,16 +159,18 @@ var Html = (function ($, module) {
       var iconStr = '<span class="' + icon + '"></span>';
       var handler = v.namespace + '-' + name;
 
+      var isTrash = name == 'delete';
+
       var buttonHtml = module.buildHtml('button', iconStr, {
         'type': 'button'
-        , 'class': 'violette-button btn-dark-link'
+        , 'class': !isTrash ? 'violette-button btn-dark-link' : 'violette-button octicon-button danger btn-dark-link'
         , 'title': title
         , 'data-provider': v.namespace
         , 'data-handler': handler
       });
 
       buttonHtml.tooltipster({
-          position: 'right',
+          position: 'bottom',
           theme: 'tooltip-custom-theme'
         }
       );
