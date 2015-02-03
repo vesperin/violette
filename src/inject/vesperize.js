@@ -30,6 +30,11 @@ var Vesperize = (function ($) {
     }
   }
 
+  function persistContent(v, content){
+    v.persist(content);
+    v.status.text('SAVED ');
+  }
+
   /**
    * Performs any post processing task after Vesperize has been initialized.
    * @param v Vesperize object
@@ -272,7 +277,7 @@ var Vesperize = (function ($) {
               cm.foldCode(cm.getCursor());
             }
             , "Ctrl-S": function(cm){
-              that.persist(cm.getValue());
+              persistContent(that, cm.getValue());
             }
           },
           undoDepth: 1, /*no undoes*/
@@ -286,6 +291,8 @@ var Vesperize = (function ($) {
       // this will adjust height of code mirror
       var grow      = 13.45;
       var heightVal = ($(this.textarea).val().split(/\r\n|\r|\n/).length);
+
+      heightVal = heightVal <= 20 ? 20 : heightVal;
 
       var editorHeight  = ((heightVal <= 25)? heightVal * grow : ((heightVal + 10) * grow));
       this.codemirror.setSize("100%", editorHeight);
@@ -325,6 +332,8 @@ var Vesperize = (function ($) {
       var content = that.codemirror.getValue();
       that.classname = compareAndSetClassName(content, that.classname, that);
 
+      persistContent(that, content);
+
       // todo(Huascar) implement
       //Refactoring.inspectWholeSourcecode(that.classname, content,
       //  function (reply) {
@@ -342,6 +351,12 @@ var Vesperize = (function ($) {
     // save the content, locally, every quarter of a second after
     // 5 seconds of idle time => total = 5.25 seconds.
     this.editor.on("idle.idleTimer", efficientCallback);
+
+
+    // if editing, then change the status
+    this.codemirror.on('beforeChange', function(instance, change){
+      that.status.text('NOT SAVED ');
+    });
 
     // makes sure that when we exit fullscreen mode
     // the fullscreen button has the appropriate icons
@@ -413,8 +428,10 @@ var Vesperize = (function ($) {
       return this;
     }
 
-    localStorage.content = value;
-    this.content = null; // we don't need content anymore
+    if(JSON.stringify(localStorage.content) !== JSON.stringify(value)){
+      localStorage.content = value;
+      this.content = null; // we don't need content anymore
+    }
 
     return this;
   };

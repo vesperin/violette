@@ -251,7 +251,9 @@ div.Editor-overwrite div.Editor-cursor {
 /* Default styles for common addons */
 
 div.Editor span.Editor-matchingbracket {
-    color: #0f0;
+    /*color: #0f0;*/
+    color: #0c0300;
+    font-weight: bolder;
 }
 
 div.Editor span.Editor-nonmatchingbracket {
