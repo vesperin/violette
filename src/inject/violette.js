@@ -149,7 +149,7 @@
         // make sure we have the inner-most blocks
         $pre.each(function(){
           var code  =  $(this);
-          //var $this = code.parent('pre');
+          //var $this = code.parent('div');
           if(isBlock(code)){
 
             var attr = code.attr('data-provide');
@@ -164,6 +164,35 @@
               // we can referenced the attached $block
               $codeScratcher.attr("data-scratcher-id", COUNTER);
               code.attr("data-scratcher-id", COUNTER);
+
+              var parent;
+              if(typeof (code.parents('div.answer')[0]) !== 'undefined'){
+                parent = code.parents('div.answer')[0];
+              } else {
+                if(typeof (code.parents('div.question')[0]) !== 'undefined'){
+                  parent = code.parents('div.question')[0];
+                } else {
+                  parent = null;
+                }
+              }
+
+
+              var identity;
+              if(parent != null){
+                var $parent = $(parent);
+                var answerIdAttr   = $parent.attr('data-answerid');
+                var questionIdAttr = $parent.attr('data-questionid');
+
+                identity = answerIdAttr || questionIdAttr;
+
+              }
+
+              if(typeof (identity) === 'undefined'){
+                identity = COUNTER;
+              }
+
+
+              code.attr("data-identity", identity);
               alterPretags(code);
               COUNTER++;
 

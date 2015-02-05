@@ -21,20 +21,25 @@ var Vesperize = (function ($) {
     v.buffers[name] = Editor.Doc(text, mode);
   }
 
-  function newBuf(v, name, content) {
+  function newBuf(v, stage) {
+
+    var name    = stage.label;
+    var content = stage.source.content;
+    var where   = stage.where;
+
 
     if (name == null) return;
     //noinspection JSUnresolvedFunction
     if (v.buffers.hasOwnProperty(name)) {
-      selectBuffer(v, v.codemirror, name);
+      selectBuffer(v, v.codemirror, name, where);
       return;
     }
 
     openBuffer(v, name, content, "text/x-java");
-    selectBuffer(v, v.codemirror, name);
+    selectBuffer(v, v.codemirror, name, where);
   }
 
-  function selectBuffer(v, editor, name) {
+  function selectBuffer(v, editor, name, where) {
 
     var buf = v.buffers[name];
     var readOnly = name !== originalMarker;
@@ -52,6 +57,11 @@ var Vesperize = (function ($) {
       }
       old.unlinkDoc(linked);
     }
+
+    if(where.length > 0){
+      summarize(v, where);
+    }
+
     editor.focus();
   }
 
@@ -200,7 +210,32 @@ var Vesperize = (function ($) {
       return s.label === content;
     });
 
-    newBuf(v, stage[0].label, stage[0].source.content);
+    newBuf(v, stage[0]);
+  }
+
+
+  function summarize(v, where/*{array of arrays}*/){
+
+    // todo(Huascar) make sure we fold bottom up and not
+    // top down; otherwise covering areas will get unfolded
+    // temp solution; reversing the where array seems to solve
+    // the problem; to be sure, I must test some boundary conditions
+    // and see if this strategy really works.
+    where = where || [];
+
+    where.reverse();
+
+    for (var l = 0; l < where.length; l++) {
+      var fold = where[l];
+      var location = Utils.createLocation(v.codemirror.getValue(), fold[0], fold[1]);
+      //noinspection JSUnresolvedFunction
+      v.codemirror.foldCode(
+        Editor.Pos(
+          location.from.line,
+          location.from.col
+        )
+      );
+    }
   }
 
   /**
@@ -269,7 +304,7 @@ var Vesperize = (function ($) {
 
       that.staging.hide();
 
-      selectBuffer(that, that.codemirror, originalMarker);
+      selectBuffer(that, that.codemirror, originalMarker, []);
       that.buffers = null;
     });
 
@@ -592,7 +627,8 @@ var Vesperize = (function ($) {
     this.namespace  = 'violette-scratchspace';
     this.options    = $.extend(true, {}, defaults, options);
     this.element    = $(element);
-    this.primaryKey = this.element.attr('data-scratcher-id');
+
+    this.primaryKey = this.element.attr('data-identity');
 
     this.handler    = [];
     this.callback   = [];
@@ -719,6 +755,7 @@ var Vesperize = (function ($) {
       var heightVal = ($(this.textarea).val().split(/\r\n|\r|\n/).length);
 
       heightVal = heightVal <= 20 ? 20 : heightVal;
+      heightVal = heightVal > 35  ? 30 : heightVal;
 
       var editorHeight  = ((heightVal <= 25)? heightVal * grow : ((heightVal + 10) * grow));
       this.codemirror.setSize("100%", editorHeight);

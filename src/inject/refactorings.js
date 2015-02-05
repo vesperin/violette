@@ -157,7 +157,7 @@ var Refactoring = (function (module) {
     var request = {
       'multistage': {
         'source': source
-        , 'budget': 15
+        , 'budget': 10
         , 'preprocess': preprocess
       }
     };
