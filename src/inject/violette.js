@@ -98,8 +98,8 @@
       //show the menu directly over the placeholder
       $scratcher.css({
         position: "absolute",
-        top: (pos.top + 5) + "px",
-        left: (pos.left + width - 50) + "px"
+        top: (pos.top + 7) + "px",
+        left: (pos.left + width - 45) + "px"
       }).show();
 
       $scratcher.show();
@@ -157,7 +157,7 @@
 
             if(!containsAttr){
               var $codeScratcher  = $('<div/>', {class:'scratch-button'});
-              var $scratch        = $('<button class="violette-button octicon-danger minibutton"><span class="octicon octicon-pencil"></span></button>');
+              var $scratch        = $('<button class="violette-button octicon-danger"><span class="octicon octicon-pencil"></span></button>');
 
               $codeScratcher.append($scratch);
 

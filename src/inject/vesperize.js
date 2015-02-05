@@ -11,6 +11,45 @@ var Vesperize = (function ($) {
    */
   var defaultClassname = 'Scratched';
 
+  function notifyContent(type, v, content) {
+
+    var opts = {};
+
+    switch (type) {
+      case 'error':
+        opts.title = "Oh No";
+        opts.text = content + "!";
+        opts.type = "error";
+        break;
+      case 'notice':
+        opts.title = "Watch out";
+        opts.text = content + "!";
+        opts.type = "notice";
+        break;
+      case 'info':
+        opts.title = "Breaking News";
+        opts.text = content;
+        opts.type = "info";
+        break;
+      case 'success':
+        opts.title = "Good News Everyone";
+        opts.text = content;
+        opts.type = "success";
+        break;
+    }
+
+    opts.before_open = function(PNotify) {
+      // Position this notice in the center of the screen.
+      PNotify.get().css({
+        "right": ($(v.editor).width() / 2)  - (PNotify.get().width()) - 10
+      });
+    };
+
+    new PNotify(opts);
+
+    v.codemirror.focus();
+  }
+
   /**
    * Catch changes in class name and make appropriate updates.
    *
@@ -33,6 +72,34 @@ var Vesperize = (function ($) {
   function persistContent(v, content){
     v.persist(content);
     v.status.text('SAVED ');
+  }
+
+  function inspectCodeExample(that, content){
+    that.classname = compareAndSetClassName(content, that.classname, that);
+    // hint users the code is broken
+    Refactoring.inspectWholeSourcecode(that.classname, content,
+      function (reply) {
+
+        var editor  = that.editor;
+
+
+        var broken = requiresPreprocessing(reply);
+        if(broken){
+          if (editor.hasClass('active')) {
+            editor.removeClass('active');
+
+            editor.addClass('broken');
+          }
+        } else {
+          if (editor.hasClass('broken')) {
+            editor.removeClass('broken');
+
+            editor.addClass('active');
+          }
+        }
+
+      }
+    );
   }
 
   function requiresPreprocessing(reply){
@@ -168,9 +235,9 @@ var Vesperize = (function ($) {
     , 'actions':  [
       {
         name: 'delete'
-        , title: 'Safely delete a code element; e.g., method, class, block.'
+        , title: 'Safely delete a selected code element.'
         , icon: 'octicon octicon-trashcan'
-        , callback: function (v/*Violette*/) {
+        , callback: function (v/*Vesperize*/) {
           var codemirror = v.codemirror;
           var content = codemirror.getValue();
 
@@ -180,9 +247,9 @@ var Vesperize = (function ($) {
           var selection = codemirror.getSelection();
 
           if ("" === selection) {
-            //Logger.warn("There is nothing to delete.");
+            notifyContent('notice', v, 'There is nothing to delete');
           } else if (selection === content) {
-            //Logger.warn("There won't be any example left after this deletion.");
+            notifyContent('notice', v, "There won't be any example left after this deletion");
           } else {
             // extract classname from content
             v.classname = compareAndSetClassName(content, v.classname, v);
@@ -219,6 +286,143 @@ var Vesperize = (function ($) {
             }
           }
         }
+      },
+      {
+        name: 'clip'
+        , title: 'Clip a code selection'
+        , icon: 'octicon octicon-clippy'
+        , callback: function (v/*Violette*/) {
+          var codemirror = v.codemirror;
+          var content = codemirror.getValue();
+
+          // nothing to refactor.
+          if ("" == content) return;
+
+          var selection = codemirror.getSelection();
+
+          if ("" === selection) {
+            notifyContent('notice', v, "There is nothing to delete");
+          } else {
+            // constructor regex: class\\s*([a-zA-Z\\d$]+).*?(public\\s+\\1\\s*\\(\\s*\\))
+            if (!Matcher.isMethod(selection)) {
+              notifyContent('notice', v, "Only methods can be clipped. Please select one");
+            } else {
+              v.classname = compareAndSetClassName(content, v.classname, v);
+              var range = Utils.selectionOffsets(codemirror, content, selection);
+
+              Refactoring.inspectWholeSourcecode(v.classname,
+                content, function(reply){
+                  var preprocess = requiresPreprocessing(reply);
+                  Refactoring.clipSelectedBlock(v.classname, content, range,
+                    preprocess, function (reply) {
+                      handleReply(v, reply);
+                    }
+                  );
+                }
+              );
+            }
+          }
+
+        }
+      },
+      {
+        name: 'cleanup',
+        title: 'Code formatting plus deduplication',
+        icon: 'octicon octicon-three-bars',
+        callback: function (v/*Violette*/) {
+          var codemirror = v.codemirror;
+          var content = codemirror.getValue();
+
+          // nothing to refactor.
+          if ("" == content) return;
+
+          v.classname = compareAndSetClassName(content, v.classname, v);
+
+          Refactoring.inspectWholeSourcecode(v.classname, content,
+            function (reply) {
+              var preprocess = requiresPreprocessing(reply);
+              Refactoring.fullCleanup(v.classname, content, preprocess, function (reply) {
+                handleReply(v, reply);
+              });
+            }
+          );
+        }
+      },
+      {
+        name: 'rename'
+        , title: 'Rename a selected element'
+        , icon: 'octicon octicon-diff-renamed'
+        , callback: function (v/*Violette*/, newName) {
+          var codemirror = v.codemirror;
+          var content = codemirror.getValue();
+          var selection = codemirror.getSelection();
+
+          // nothing to refactor.
+          if ("" == content) return;
+
+          if ("" == selection) {
+            notifyContent('notice', v, "Please select something");
+          }
+
+          var range = Utils.selectionOffsets(codemirror, content, selection);
+
+          v.classname = compareAndSetClassName(content, v.classname, v);
+
+          Refactoring.renameSelectedMember(v.classname, newName, content,
+            range, function (reply) {
+              handleReply(v, reply);
+          });
+        }
+      },
+      {
+        name: 'notes'
+        , title: 'Annotates code sections'
+        , icon: 'octicon octicon-comment'
+        , callback: function (v/*Violette*/) {}
+      },
+      {
+        name: 'wrap'
+        , title: 'Wrap code inside a class'
+        , icon: 'octicon octicon-plus'
+        , callback: function (v/*Violette*/, newName) {
+        var codemirror = v.codemirror;
+        var content = codemirror.getValue();
+        var selection = codemirror.getSelection();
+
+        // nothing to refactor.
+        if ("" == content) return;
+
+        if ("" == selection) {
+          notifyContent('notice', v, "Please select something");
+        }
+
+        var range = Utils.selectionOffsets(codemirror, content, selection);
+
+        v.classname = compareAndSetClassName(content, v.classname, v);
+
+        Refactoring.renameSelectedMember(v.classname, newName, content,
+          range, function (reply) {
+            handleReply(v, reply);
+          });
+      }
+      },
+      {
+        'name': 'stage'
+        , 'title': 'Multi stage code example'
+        , 'label': 'Stage'
+        , callback: function(v){}
+      },
+      {
+        'name': 'history'
+        , 'title': 'Show edit history'
+        , 'label': 'History'
+        , callback: function(v){}
+      },
+      {
+        'name': 'full'
+        , 'title': 'Launch fullscreen mode'
+        , 'label': 'Fullscreen'
+        , callback: function(v){}
       }
     ]
     , 'modes':  []
@@ -237,6 +441,7 @@ var Vesperize = (function ($) {
     this.namespace  = 'violette-scratchspace';
     this.options    = $.extend(true, {}, defaults, options);
     this.element    = $(element);
+    this.primaryKey = this.element.attr('data-scratcher-id');
 
     this.handler    = [];
     this.callback   = [];
@@ -245,17 +450,31 @@ var Vesperize = (function ($) {
     this.codemirror = null;
     this.editor     = null;
     this.textarea   = null;
+
+    // status stuff
     this.status     = null;
-    this.stopwatch  = null;
+    this.sloc       = null;
 
     // use entirely with local storage
     this.content = null;
 
     // create the multistage object
     this.multistage = {};
+    this.parent     = this.element.parent('div.post-text');
+    this.context    = {
+      "dir1": "down",
+      "dir2": "left",
+      "context": this.parent
+    };
+
+    // must be initialize in other to use octicon icons
+    // for their alerts
+    PNotify.prototype.options.styling = "octicon";
+    PNotify.prototype.options.delay   = 4000;
 
     this.init();
 
+    this.stopwatch  = new Stopwatch();
   };
 
 
@@ -328,7 +547,9 @@ var Vesperize = (function ($) {
               cm.foldCode(cm.getCursor());
             }
             , "Ctrl-S": function(cm){
+              // todo(Huascar) Save both a draft and the content
               persistContent(that, cm.getValue());
+              inspectCodeExample(that, cm.getValue());
             }
           },
           undoDepth: 1, /*no undoes*/
@@ -385,18 +606,6 @@ var Vesperize = (function ($) {
 
       persistContent(that, content);
 
-      // todo(Huascar) implement
-      //Refactoring.inspectWholeSourcecode(that.classname, content,
-      //  function (reply) {
-      //
-      //    if (!reply.warnings && !reply.failure) {
-      //      that.persist();
-      //    } else {
-      //      handleReply(that, reply);
-      //    }
-      //  }
-      //);
-
     }, 250, false);
 
     // save the content, locally, every quarter of a second after
@@ -440,8 +649,16 @@ var Vesperize = (function ($) {
       return;
     }
 
-    if (localStorage.content) {
-      this.content = localStorage.content;
+    var content = localStorage.getItem(this.primaryKey);
+    if (content) {
+      this.content = content;
+      return this;
+    }
+
+    // assert content is undefined and local content is null
+    if(this.content == null){
+      this.content =  Utils.getContent(this, this.element);
+      return this;
     }
   };
 
@@ -479,8 +696,8 @@ var Vesperize = (function ($) {
       return this;
     }
 
-    if(JSON.stringify(localStorage.content) !== JSON.stringify(value)){
-      localStorage.content = value;
+    if(JSON.stringify(localStorage.getItem(this.primaryKey)) !== JSON.stringify(value)){
+      localStorage.setItem(this.primaryKey, value);
       this.content = null; // we don't need content anymore
     }
 

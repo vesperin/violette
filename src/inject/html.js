@@ -120,6 +120,52 @@ var Html = (function ($, module) {
     return container;  // DOM container including a nice-looking button group
   }
 
+  function buildDivider(){
+    return module.buildHtml('span', {'class':'meta-divider'}, {});
+  }
+
+  function buildExtraInfo(text){
+    return module.buildHtml('span', ' ' + text + ' ', {'class': 'extra'});
+  }
+
+  function buildInfoSection(v, infocontainer){
+    v.status    = module.buildHtml('span', 'NOT SAVED ', {'class': 'status'});
+    var cured   = v.content.replace(/\r\n|\r/g, '\n');
+    var result  = Utils.count(cured);
+    var lines   = result.total + ' lines (' + result.sloc + ' sloc)';
+    v.sloc      = buildExtraInfo(lines);
+
+    infocontainer.append(v.status);
+    infocontainer.append(buildDivider());
+    infocontainer.append(v.sloc);
+
+    return infocontainer;
+  }
+
+  function buildOcticonButton(name, title, v, handler, iconStr){
+    var isTrash = name == 'delete';
+    return module.buildHtml('button', iconStr, {
+      'type': 'button'
+      , 'class': !isTrash ? 'violette-button octicon-button btn-dark-link' : 'violette-button octicon-button danger btn-dark-link'
+      , 'title': title
+      , 'data-provider': v.namespace
+      , 'data-handler': handler
+    });
+  }
+
+
+  function buildMiniButton(title, v, handler, iconStr){
+    return module.buildHtml('button', iconStr, {
+      'type': 'button'
+      , 'class': 'violette-button minibutton'
+      , 'title': title
+      , 'data-provider': v.namespace
+      , 'data-handler': handler
+    });
+  }
+
+
+
   /**
    * Creates Vesperize's thin header.
    *
@@ -133,11 +179,7 @@ var Html = (function ($, module) {
     var leftContainer   = module.buildHtml('div', {'class': 'info'}, {});
 
     // build left container
-    v.status    = module.buildHtml('span', 'NOT SAVED ', {'class': 'status'});
-    var divider = module.buildHtml('span', {'class':'meta-divider'}, {});
-
-    leftContainer.append(v.status);
-    leftContainer.append(divider);
+    leftContainer = buildInfoSection(v, leftContainer);
 
 
     container.append(leftContainer);
@@ -146,9 +188,10 @@ var Html = (function ($, module) {
     var actions = v.options.actions;
     var len     = actions.length;
 
+    var hasButtonGroup = false;
+    var group   = module.buildHtml('div', { 'class': 'button-group'}, {});
     for(var i = 0; i < len; i++){
       // octicon-button
-      var group   = module.buildHtml('div', { 'class': 'btn-group'}, {});
       var action  = actions[i];
 
       var name  = action.name;
@@ -156,18 +199,19 @@ var Html = (function ($, module) {
       var icon  = action.icon;
       var cb    = action.callback;
 
-      var iconStr = '<span class="' + icon + '"></span>';
+      var hasLabel = typeof(action.label) !== 'undefined';
+
+      var iconStr = (!hasLabel
+        ? '<span class="' + icon + '"></span>'
+        : action.label
+      );
+
       var handler = v.namespace + '-' + name;
 
-      var isTrash = name == 'delete';
-
-      var buttonHtml = module.buildHtml('button', iconStr, {
-        'type': 'button'
-        , 'class': !isTrash ? 'violette-button btn-dark-link' : 'violette-button octicon-button danger btn-dark-link'
-        , 'title': title
-        , 'data-provider': v.namespace
-        , 'data-handler': handler
-      });
+      var buttonHtml = (hasLabel
+        ? buildMiniButton(title, v, handler, iconStr)
+        : buildOcticonButton(name, title, v, handler, iconStr)
+      );
 
       buttonHtml.tooltipster({
           position: 'bottom',
@@ -178,14 +222,23 @@ var Html = (function ($, module) {
       v.handler.push(handler);
       v.callback.push(cb);
 
-      if('plus' === name){
-        leftContainer.append(buttonHtml);
+
+      if(hasLabel){
+        group.append(buttonHtml);
+        hasButtonGroup = true;
       } else {
-        rightContainer.append(buttonHtml);
+        if('plus' === name){
+          leftContainer.append(buttonHtml);
+        } else {
+          rightContainer.append(buttonHtml);
+        }
       }
 
     }
 
+    if(hasButtonGroup){
+      rightContainer.append(group);
+    }
     container.append(rightContainer);
     container.append(leftContainer);
 
@@ -195,28 +248,12 @@ var Html = (function ($, module) {
   /**
    * Create Vesperize's thin footer
    * @param v Vesperize object
-   * @param container DOM editor
    * @param textarea text area object
    * @return {*}
    */
-  function buildTextarea(v, container, textarea) {
-    if (!container.is('textarea')) { // it must be a `pre` element
-      var rawContent = (v.content != null
-        ? v.content
-        : container.text()
-      );
-
-      var currentContent = $.trim(rawContent);
-
-      if (container.is('div')) {
-        currentContent = currentContent
-          .replace(/(<([^>]+)>)/ig, "") // strip html tags
-          .replace(/ +(?= )/g, '')      // strip numerous whitespaces
-          .replace(/^ +/gm, '');       // trim each line
-      }
-
-
-      textarea = module.buildHtml('textarea', currentContent, {
+  function buildTextarea(v, textarea) {
+    if(v.content != null){
+      textarea = module.buildHtml('textarea', v.content, {
         'class': 'file-editor-textarea violette-input'
       });
     }
@@ -238,7 +275,7 @@ var Html = (function ($, module) {
       , 'class': 'editing'
     }, {});
 
-    body.append(buildTextarea(v, v.element, textarea));
+    body.append(buildTextarea(v,  textarea));
 
     return body;
   };

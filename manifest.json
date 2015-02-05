@@ -45,6 +45,7 @@
         "css/clean-scrollbar.css",
         "css/foldgutter.css",
         "css/tooltipster.css",
+        "css/pnotify.custom.min.css",
         "css/tomorrow.min.css",
         "css/violette.css"
       ],
@@ -64,6 +65,8 @@
         "js/highlightjs/highlight.min.js",
         "js/bootstrap/bootstrap.min.js",
         "js/jquery/jquery.tooltipster.min.js",
+        "js/jquery/jquery.tooltipster.min.js",
+        "js/jquery/pnotify.custom.min.js",
         "js/screenfull/screenfull.min.js",
         "js/jquery/idle-timer.min.js",
         "js/setjs/set.js",
