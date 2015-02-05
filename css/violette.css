@@ -17,6 +17,13 @@
     margin: 0;
 }
 
+
+.violette-multistage {
+    margin: 0;
+    height: 25px;
+    border-bottom: 1px dashed #ddd;
+}
+
 .violette-editor > .violette-preview {
     background: #fff;
     border-top: 1px dashed #ddd;
@@ -408,7 +415,12 @@ fieldset[disabled] .octicon-danger.active {
     background-image: -webkit-linear-gradient(#8add6d, #60b044);
     background-image: linear-gradient(#8add6d, #60b044);
     background-repeat: repeat-x;
-    border-color: #5ca941
+    border-color: #5ca941;
+
+    padding: 1px 5px;
+    font-size: 10px;
+    line-height: 1.5;
+    border-radius: 3px
 }
 
 .minibutton.primary:hover {

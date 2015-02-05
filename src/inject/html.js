@@ -57,11 +57,21 @@ var Html = (function ($, module) {
    */
   module.buildFooter = function(v){
     var bottom = module.buildHtml('div', {
-      'class': 'violette-footer  btn-toolbar'
+      'class': 'violette-footer'
     }, {});
 
-    bottom = buildLeftBox(v, bottom, v.options.modes);
-    bottom = buildRightBox(v, bottom, v.options.social);
+    var toolbar = module.buildHtml('div', {
+      'class': 'btn-toolbar'
+    }, {});
+
+    toolbar = buildLeftBox(v, toolbar, v.options.modes);
+    toolbar = buildRightBox(v, toolbar, v.options.social);
+
+    v.staging = module.buildHtml('div', {'class': 'violette-multistage btn-toolbar'}, {});
+    bottom.append(v.staging);
+    bottom.append(toolbar);
+
+    v.staging.hide();
 
     return bottom;
   };
@@ -163,6 +173,16 @@ var Html = (function ($, module) {
       , 'data-handler': handler
     });
   }
+
+  function buildClosingButton(v){
+    return Html.buildHtml('button', '<span class="octicon octicon-x" aria-hidden="true"></span>', {
+      'class': 'close'
+      , 'aria-label': 'Close'
+      , 'data-provider': v.namespace
+      , 'data-handler': v.namespace + '-' + 'close'
+    });
+  }
+
 
 
 
@@ -279,6 +299,9 @@ var Html = (function ($, module) {
 
     return body;
   };
+
+
+  module.buildClosingButton = buildClosingButton;
 
 
   return module;
