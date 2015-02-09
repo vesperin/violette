@@ -43,6 +43,20 @@ var Refactoring = (function (module) {
     Calls.post(postUrl, request, null, callback/*(reply)*/);
   };
 
+
+  module.detectPartialSnippet = function (name, content, callback) {
+
+    var source = Utils.createCode(name, 'Java: *scratched* code snippet', content);
+
+    var request = {
+      'preprocess': {
+        'source': source
+      }
+    };
+
+    Calls.post(postUrl, request, null, callback/*(reply)*/);
+  };
+
   module.inspectWholeSourcecode = function (name, content, callback) {
 
     var source = Utils.createCode(name, 'Java: *scratched* code snippet', content);

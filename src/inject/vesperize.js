@@ -1,3 +1,4 @@
+//noinspection JSUnresolvedVariable
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
@@ -26,6 +27,15 @@ var Vesperize = (function ($) {
     var name    = stage.label;
     var content = stage.source.content;
     var where   = stage.where;
+
+    if(content === v.codemirror.getValue()){
+      // prevents from trying to process a stage
+      // that you are already in.
+      summarize(v, where);
+      v.codemirror.focus();
+
+      return;
+    }
 
 
     if (name == null) return;
@@ -141,7 +151,7 @@ var Vesperize = (function ($) {
         var editor  = that.editor;
 
 
-        var broken = requiresPreprocessing(reply);
+        var broken = containsSyntaxErrors(reply);
         if(broken){
           if (editor.hasClass('active')) {
             editor.removeClass('active');
@@ -160,7 +170,24 @@ var Vesperize = (function ($) {
     );
   }
 
+
+  function ignoreResolveElementWarning(warnings){
+    if(warnings){
+      for(var i = 0; i < warnings.length; i++){
+        var warning = warnings[i];
+        if(warning.message.indexOf('cannot be resolved') > -1) return true;
+      }
+    }
+
+    return false;
+  }
+
   function requiresPreprocessing(reply){
+    //noinspection JSUnresolvedVariable
+    return ((typeof(reply.info) !== 'undefined' && reply.info.messages[0] === 'true'));
+  }
+
+  function containsSyntaxErrors(reply){
     return ((typeof(reply.warnings) !== 'undefined' && reply.warnings.length > 0) || (typeof(reply.failure) !== 'undefined'));
   }
 
@@ -203,6 +230,7 @@ var Vesperize = (function ($) {
    * @param content stage content
    */
   function swapDocument(v, content){
+
     var multistage  = v.multistage[v.id];
     var stages      = multistage.stages;
 
@@ -214,28 +242,37 @@ var Vesperize = (function ($) {
   }
 
 
+  function expandEverything(cm){
+    cm.operation(function() {
+      for (var l = cm.firstLine(); l <= cm.lastLine(); ++l){
+        //noinspection JSUnresolvedFunction
+        cm.foldCode({line: l, ch: 0}, null, "unfold");
+      }
+    });
+  }
+
+
   function summarize(v, where/*{array of arrays}*/){
 
-    // todo(Huascar) make sure we fold bottom up and not
-    // top down; otherwise covering areas will get unfolded
-    // temp solution; reversing the where array seems to solve
-    // the problem; to be sure, I must test some boundary conditions
-    // and see if this strategy really works.
     where = where || [];
-
-    where.reverse();
 
     for (var l = 0; l < where.length; l++) {
       var fold = where[l];
-      var location = Utils.createLocation(v.codemirror.getValue(), fold[0], fold[1]);
+
+      var line = fold.from[0];
+      var off  = fold.from[1];
+
       //noinspection JSUnresolvedFunction
       v.codemirror.foldCode(
         Editor.Pos(
-          location.from.line,
-          location.from.col
-        )
+          line,
+          off
+        ),
+        null, "fold"   // this will force folding when swapping between buffers
       );
     }
+
+    v.codemirror.refresh();
   }
 
   /**
@@ -253,17 +290,10 @@ var Vesperize = (function ($) {
       v.codemirror.focus();
     }
 
-    function sortStages(prop, object) {
-      object = object.sort(function(a, b) {
-        return (a[prop].content.length > b[prop].content.length);
-      });
-
-      return object;
-    }
 
     // todo(Huascar) convert each stage into a button.
     var multistage  = v.multistage[v.id];
-    var stages      = sortStages('source', multistage.stages);
+    var stages      = multistage.stages;
     var len         = stages.length;
     for(var i = 0; i < len; i++){
       var stage = stages[i];
@@ -306,6 +336,8 @@ var Vesperize = (function ($) {
 
       selectBuffer(that, that.codemirror, originalMarker, []);
       that.buffers = null;
+
+      expandEverything(that.codemirror);
     });
 
     v.staging.show();
@@ -433,7 +465,7 @@ var Vesperize = (function ($) {
 
             } else {
 
-              Refactoring.inspectWholeSourcecode(v.classname, content,
+              Refactoring.detectPartialSnippet(v.classname, content,
                 function (reply) {
 
                   var preprocess = requiresPreprocessing(reply);
@@ -474,7 +506,7 @@ var Vesperize = (function ($) {
               v.classname = compareAndSetClassName(content, v.classname, v);
               var range = Utils.selectionOffsets(codemirror, content, selection);
 
-              Refactoring.inspectWholeSourcecode(v.classname,
+              Refactoring.detectPartialSnippet(v.classname,
                 content, function(reply){
                   var preprocess = requiresPreprocessing(reply);
                   Refactoring.clipSelectedBlock(v.classname, content, range,
@@ -502,7 +534,7 @@ var Vesperize = (function ($) {
 
           v.classname = compareAndSetClassName(content, v.classname, v);
 
-          Refactoring.inspectWholeSourcecode(v.classname, content,
+          Refactoring.detectPartialSnippet(v.classname, content,
             function (reply) {
               var preprocess = requiresPreprocessing(reply);
               Refactoring.fullCleanup(v.classname, content, preprocess, function (reply) {
@@ -576,6 +608,11 @@ var Vesperize = (function ($) {
         , 'label': 'Stage'
         , callback: function(v){
 
+          if(v.buffers != null && Object.keys(v.buffers).length > 0) {
+            v.codemirror.focus();
+            return;
+          }
+
           var codemirror = v.codemirror;
           var content = codemirror.getValue();
 
@@ -584,7 +621,7 @@ var Vesperize = (function ($) {
 
           v.classname = compareAndSetClassName(content, v.classname, v);
 
-          Refactoring.inspectWholeSourcecode(v.classname, content,
+          Refactoring.detectPartialSnippet(v.classname, content,
             function (reply) {
               //name, content, preprocess, callback
               var preprocess = requiresPreprocessing(reply);
@@ -605,9 +642,9 @@ var Vesperize = (function ($) {
         , callback: function(v){}
       },
       {
-        'name': 'full'
-        , 'title': 'Launch fullscreen mode'
-        , 'label': 'Fullscreen'
+        'name': 'notes'
+        , 'title': 'Launch notes'
+        , 'label': 'Notes'
         , callback: function(v){}
       }
     ]
@@ -734,6 +771,7 @@ var Vesperize = (function ($) {
           matchBrackets: true,
           extraKeys: {
             "Ctrl-Q": function (cm) {
+              //noinspection JSUnresolvedFunction
               cm.foldCode(cm.getCursor());
             }
             , "Ctrl-S": function(cm){
@@ -940,6 +978,7 @@ var Vesperize = (function ($) {
     that.change(name, exchangeicon);
   };
 
+  //noinspection JSUnusedLocalSymbols
   Vesperize.prototype.focus    = function(cm/*CodeMirror*/){
     var editor = this.editor;
 
@@ -965,6 +1004,7 @@ var Vesperize = (function ($) {
   };
 
 
+  //noinspection JSUnusedLocalSymbols
   Vesperize.prototype.blur = function(cm/*CodeMirror*/){
 
     var options = this.options;
