@@ -12,6 +12,73 @@ var Vesperize = (function ($) {
    */
   var defaultClassname = 'Scratched';
 
+
+  function deleteCloseButtonHandler(v){
+    var handlerIndex = v.handler.indexOf(v.namespace + '-' + 'close');
+    delete v.handler[handlerIndex];
+    delete v.callback[handlerIndex];
+  }
+
+  /**
+   * Creates the edit tracker so that developers
+   * can replay history (i.e., navigate marked drafts)
+   *
+   * @param v Vesperize object
+   */
+  function replayHistory(v){
+
+    v.disableButtons();
+    notifyContent('info', v, 'Entering history view');
+
+    var left  = Html.buildHtml('span', {'class': 'tabnav-left'}, {});
+    var right = Html.buildHtml('span', {'class': 'tabnav-right'}, {});
+    var tip   = Html.buildHtml('span', 'Hello', {'id': Utils.brand('value'), 'class': 'tabnav-center'});
+
+    v.history = Html.buildEditTracker();
+    left.append(v.history);
+    v.staging.append(left);
+
+    v.history.noUiSlider({
+      start: [ 0 ],
+      step: 1,
+      connect: 'lower',
+      range: {
+        'min': [0],
+        'max': [1000]
+      }
+    });
+
+    v.history.Link('lower').to(tip);
+
+    v.staging.append(tip);
+    right.append(Html.buildClosingButton(v));
+    v.staging.append(right);
+
+    v.handler.push(v.namespace + '-' + 'close');
+    v.callback.push(function(that){
+
+      notifyContent('info', that, 'Exiting history view');
+
+      that.staging.children().hide();
+      that.staging.children().remove();
+
+      that.staging.hide();
+
+      deleteCloseButtonHandler(v);
+
+      $(that.history)[0].destroy();
+      that.history = null;
+
+      that.enableButtons();
+
+    });
+
+    v.staging.show();
+    v.codemirror.focus();
+
+  }
+
+
   /**
    * Default key for main buffer
    * @type {string} the actual key
@@ -72,7 +139,18 @@ var Vesperize = (function ($) {
       summarize(v, where);
     }
 
+    updateLineInfo(v);
+
     editor.focus();
+  }
+
+
+  function updateLineInfo(v){
+    var editor = v.codemirror;
+    var cured   = editor.getValue().replace(/\r\n|\r/g, '\n');
+    var result  = Utils.count(cured);
+    var lines   = result.total + ' lines (' + result.sloc + ' sloc)';
+    v.sloc.text(lines);
   }
 
 
@@ -281,6 +359,7 @@ var Vesperize = (function ($) {
    */
   function multiStageCode(v/*Violette*/) {
 
+    v.disableButtons();
     notifyContent('info', v, 'Entering multistage view');
 
     v.buffers = {}; // resetting cache
@@ -300,6 +379,8 @@ var Vesperize = (function ($) {
       var title = i + ' : ' + stage.label;
       var name  = stage.label;
       var handler = v.namespace + '-' + name;
+
+      v.indexes.push(handler);
 
       var buttonHtml = Html.buildHtml('button', title, {
         'type': 'button'
@@ -337,7 +418,22 @@ var Vesperize = (function ($) {
       selectBuffer(that, that.codemirror, originalMarker, []);
       that.buffers = null;
 
+      deleteCloseButtonHandler(that);
+
       expandEverything(that.codemirror);
+
+      for(var idx = 0; idx < that.indexes.length; idx++){
+        var key   = that.indexes[idx];
+        var i     = that.handler.indexOf(key);
+        delete that.handler[i];
+        delete that.callback[i];
+      }
+
+      that.indexes = [];
+
+      updateLineInfo(that);
+
+      that.enableButtons();
     });
 
     v.staging.show();
@@ -427,7 +523,7 @@ var Vesperize = (function ($) {
     , width: 'inherit'
     , height: 'inherit'
     , hideable: false
-    , intervalinmillis: 5000
+    , intervalinmillis: 2000
     , 'actions':  [
       {
         name: 'delete'
@@ -571,7 +667,7 @@ var Vesperize = (function ($) {
         }
       },
       {
-        name: 'notes'
+        name: 'annotate'
         , title: 'Annotates code sections'
         , icon: 'octicon octicon-comment'
         , callback: function (v/*Violette*/) {}
@@ -639,7 +735,17 @@ var Vesperize = (function ($) {
         'name': 'history'
         , 'title': 'Show edit history'
         , 'label': 'History'
-        , callback: function(v){}
+        , callback: function(v){
+          // if history widget is already created (being displayed)
+          // then don't show it
+          if(v.history != null) {
+            v.codemirror.focus();
+            return;
+          }
+
+          replayHistory(v);
+
+        }
       },
       {
         'name': 'notes'
@@ -680,12 +786,17 @@ var Vesperize = (function ($) {
     this.sloc       = null;
     this.staging    = null;
 
+    // history
+    this.drafts     = null;
+    this.history    = null; // edit tracker
+
     // use entirely with local storage
     this.content = null;
 
     // create the multistage object
     this.multistage     = {};
     this.buffers        = null; // store button LIVE stages
+    this.indexes        = [];
 
     this.parent     = this.element.parent('div.post-text');
     this.context    = {
@@ -718,6 +829,8 @@ var Vesperize = (function ($) {
     // check local storage and see if we can recover the last
     // saved edit made by the current user.
     this.checkStorage();
+    // check local storage and see if we can recover all marked drafts
+    this.checkMarkedDrafts();
 
     // build internal editor if we don't have one available
     if (this.editor == null) {
@@ -795,7 +908,7 @@ var Vesperize = (function ($) {
       heightVal = heightVal <= 20 ? 20 : heightVal;
       heightVal = heightVal > 35  ? 30 : heightVal;
 
-      var editorHeight  = ((heightVal <= 25)? heightVal * grow : ((heightVal + 10) * grow));
+      var editorHeight  = heightVal * grow;
       this.codemirror.setSize("100%", editorHeight);
       this.codemirror.refresh();
 
@@ -893,6 +1006,28 @@ var Vesperize = (function ($) {
 
 
   /**
+   * Private: checks local HTML storage for saved all marked drafts.
+   */
+  Vesperize.prototype.checkMarkedDrafts = function () {
+    if (!supportsHtmlStorage()) {
+      return;
+    }
+
+    var drafts = localStorage.getItem(this.primaryKey + 'drafts');
+    if (drafts) {
+      this.drafts = JSON.parse(drafts);
+      return this;
+    }
+
+    // assert content is undefined and local content is null
+    if(this.drafts == null){
+      this.drafts =  {};
+      return this;
+    }
+  };
+
+
+  /**
    * Private: listener to click events
    *
    * @param e the source of the event; i.e., the button.
@@ -959,6 +1094,12 @@ var Vesperize = (function ($) {
     });
   };
 
+  /**
+   * Private: exchange icons on a given HTML element.
+   *
+   * @param name name of element
+   * @param a new icon
+   */
   Vesperize.prototype.exchange = function (name, a) {
     var that = this;
 
@@ -1023,9 +1164,49 @@ var Vesperize = (function ($) {
     return this;
   };
 
-
+  /**
+   * Private: fits Vesperize inside a div element.
+   */
   Vesperize.prototype.fit = function(){
     this.codemirror.refresh();
+  };
+
+  /**
+   * Private: enables already disabled buttons on Vesperize.
+   *
+   * @param name name of element to disable; 'all' if no one is given.
+   *
+   * @return {Vesperize} object
+   */
+  Vesperize.prototype.enableButtons = function(name) {
+    name = name || 'all';
+
+    var alter = function (el) {
+      el.removeAttr('disabled');
+    };
+
+    this.change(name, alter);
+
+    return this;
+  };
+
+  /**
+   * Private: disables already enabled buttons on Vesperize.
+   *
+   * @param name name of element to enable; 'all' if no one is given.
+   *
+   * @return {Vesperize} object
+   */
+  Vesperize.prototype.disableButtons = function(name){
+    name = name || 'all';
+
+    var alter = function (el) {
+      el.attr('disabled', 'disabled');
+    };
+
+    this.change(name, alter);
+
+    return this;
   };
 
   return Vesperize;

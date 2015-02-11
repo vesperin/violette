@@ -47,6 +47,7 @@
         "css/tooltipster.css",
         "css/pnotify.custom.min.css",
         "css/tomorrow.min.css",
+        "css/jquery.nouislider.min.css",
         "css/violette.css"
       ],
 
@@ -69,6 +70,7 @@
         "js/jquery/pnotify.custom.min.js",
         "js/screenfull/screenfull.min.js",
         "js/jquery/idle-timer.min.js",
+        "js/jquery/jquery.nouislider.all.min.js",
         "js/setjs/set.js",
         "lib/violette.js"
 

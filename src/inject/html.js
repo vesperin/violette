@@ -235,6 +235,7 @@ var Html = (function ($, module) {
 
       buttonHtml.tooltipster({
           position: 'bottom',
+          hideOnClick: true,
           theme: 'tooltip-custom-theme'
         }
       );
@@ -298,6 +299,21 @@ var Html = (function ($, module) {
     body.append(buildTextarea(v,  textarea));
 
     return body;
+  };
+
+  /**
+   * Builds the Edit tracker HTML element
+   *
+   * @return {*|HTMLElement}
+   */
+  module.buildEditTracker = function() {
+    var tracker = module.buildHtml('div', {
+      'id': Utils.brand('tracker')
+      , 'class': 'violette-slider'
+    }, {});
+
+
+    return tracker;
   };
 
 

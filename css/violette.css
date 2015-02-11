@@ -224,6 +224,19 @@ fieldset[disabled] .octicon-danger.active {
     float:right
 }
 
+.tabnav-left{
+    position:relative;
+    float:left;
+}
+
+.tabnav-center{
+    position:relative;
+    left:15px;
+    font-size: 12px;
+    font-family:"futura-pt",Helvetica,Arial,sans-serif;
+    text-rendering:optimizeLegibility;
+}
+
 .meta-divider{
     display:inline-block;
     width:1px;
@@ -467,4 +480,48 @@ fieldset[disabled] .octicon-danger.active {
 .button-group .button_to:first-child .minibutton{border-top-left-radius:3px;border-bottom-left-radius:3px}
 .button-group .button_to:last-child .minibutton{border-top-right-radius:3px;border-bottom-right-radius:3px}
 .button-group+.button-group,.button-group+.minibutton{margin-left:5px}
+
+
+/*noUiSlider*/
+.violette-slider {
+    width: 50px;
+}
+
+.noUi-handle{
+    width:10px;
+    height:10px;
+    /*position: relative;*/
+    left: 24px;
+}
+
+/*width: 350px*/
+.noUi-horizontal { left: 8px; width: 350px; height:12px; bottom: 1px;top: 5px;}
+.noUi-horizontal .noUi-handle {
+    width: 14px;
+    height: 18px;
+    left: -8px;
+    top: -4px
+}
+
+.noUi-connect {
+    background: #34495e;
+    box-shadow: inset 0 0 3px rgba(51, 51, 51, .45);
+    -webkit-transition: background 450ms;
+    transition: background 450ms
+}
+
+.noUi-background {
+    background: #FAFAFA;
+    box-shadow: inset 0 1px 1px #f0f0f0
+}
+
+.noUi-handle:after, .noUi-handle:before {
+    display: block;
+    position: absolute;
+    height: 14px;
+    width: 1px;
+    background: #E8E7E6;
+    left: 14px;
+    top: 6px
+}
 
