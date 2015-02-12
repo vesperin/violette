@@ -34,6 +34,17 @@ var Vesperize = (function ($) {
     var right = Html.buildHtml('span', {'class': 'tabnav-right'}, {});
     var tip   = Html.buildHtml('span', 'Hello', {'id': Utils.brand('value'), 'class': 'tabnav-center'});
 
+    // todo(Huascar) implement drafts tracking
+    function setValue(value, handleElement, slider){
+      // 1. take the value and use it as the index for this.drafts[value]
+      //    to get some data and access it to get the name of the draft
+      // 2. this name will be text to be inserted into the tip html element.
+      // 3. use the select buffer thing to swap documents as the slider
+      //    handle is dragged left or right
+      // 4. WHen exiting, then put the original document back in place
+      tip.text(value);
+    }
+
     v.history = Html.buildEditTracker();
     left.append(v.history);
     v.staging.append(left);
@@ -48,7 +59,7 @@ var Vesperize = (function ($) {
       }
     });
 
-    v.history.Link('lower').to(tip);
+    v.history.Link('lower').to(setValue);
 
     v.staging.append(tip);
     right.append(Html.buildClosingButton(v));
@@ -187,6 +198,64 @@ var Vesperize = (function ($) {
       PNotify.get().css({
         "right": ($(v.editor).width() / 2)  - (PNotify.get().width()) - 10
       });
+    };
+
+    new PNotify(opts);
+
+    v.codemirror.focus();
+  }
+
+  function shareDialog(v, content) {
+    var modal_overlay;
+    var opts = {};
+
+    opts.title = "Sharing Example";
+    opts.text = content + "!";
+    opts.type = "notice";
+    opts.icon = 'octicon octicon-link-external';
+
+    opts.hide = false;
+    opts.confirm = {
+        prompt: true,
+        prompt_multi_line: true,
+        prompt_default: 'https://draftin.com/documents/568698?token=0KJMclyW_dTbsh2rq9jgMC7r1ZsLmieAvQCspoE20ynT7YaXV7maDWUlUjf1K-8uaPhX_pBiCwK0CEj5OeBg7QU'
+    };
+
+    opts.buttons = {
+        closer: false,
+        sticker: false
+    };
+
+    opts.history = {
+        history: false
+    };
+
+    opts.before_open = function(PNotify) {
+      // Position this notice in the center of the screen.
+      PNotify.get().css({
+        "top":  ($(window).height() / 2) - (PNotify.get().height() / 2),
+        "left": ($(window).width() / 2) - (PNotify.get().width() / 2)
+      });
+
+      if (modal_overlay) modal_overlay.fadeIn("fast");
+      else modal_overlay = $("<div />", {
+        "class": "ui-widget-overlay",
+        "css": {
+          "display": "none",
+          "position": "fixed",
+          "top": "0",
+          "bottom": "0",
+          "right": "0",
+          "left": "0",
+          "z-index": "1040",
+          "background-color": "#000",
+          "opacity": ".5"
+        }
+      }).appendTo("body").fadeIn("fast");
+    };
+
+    opts.before_close = function() {
+      modal_overlay.fadeOut("fast");
     };
 
     new PNotify(opts);
@@ -415,7 +484,7 @@ var Vesperize = (function ($) {
 
       that.staging.hide();
 
-      selectBuffer(that, that.codemirror, originalMarker, []);
+      that.codemirror.swapDoc(that.buffers[originalMarker]);
       that.buffers = null;
 
       deleteCloseButtonHandler(that);
@@ -462,6 +531,7 @@ var Vesperize = (function ($) {
       if (reply.info) {
         //noinspection JSUnresolvedVariable
         console.log(reply.info.messages.join('\n'));
+        notifyContent('info', v, reply.info.messages.join('\n'));
         codemirror.focus();
       } else if (reply.warnings) {
         if (silent) {
@@ -504,8 +574,7 @@ var Vesperize = (function ($) {
             : reply.failure.message
         );
 
-        // todo(Huascar) implement Logger.err(error);
-        // a bar that appears above the footer
+        notifyContent('error', v, error);
       }
     }
 
@@ -754,8 +823,29 @@ var Vesperize = (function ($) {
         , callback: function(v){}
       }
     ]
-    , 'modes':  []
-    , 'social': []
+    , 'modes':  [
+    ]
+    , 'social': [
+      {
+        name: 'share'
+        , title: 'Share Code Example'
+        , label: 'SHARE'
+        , callback: function(v){
+
+
+
+          shareDialog(v, "Anyone with this link can see your fantastic work.");
+        }
+      },
+      {
+        name: 'document'
+        , title: 'Document curated example.'
+        , label: 'DOCUMENT'
+        , callback: function (v/*Vesperize*/) {
+
+        }
+      }
+    ]
   };
 
   /**
@@ -805,10 +895,38 @@ var Vesperize = (function ($) {
       "context": this.parent
     };
 
+    PNotify.removeAll();
+
     // must be initialize in other to use octicon icons
     // for their alerts
     PNotify.prototype.options.styling = "octicon";
     PNotify.prototype.options.delay   = 4000;
+    PNotify.prototype.options.confirm = {
+      // Make a confirmation box.
+      confirm: false,
+      // Make a prompt.
+      prompt: false,
+      // Classes to add to the input element of the prompt.
+      prompt_class: "",
+      // The default value of the prompt.
+      prompt_default: "",
+      // Whether the prompt should accept multiple lines of text.
+      prompt_multi_line: false,
+      // Where to align the buttons. (right, center, left, justify)
+      align: "right",
+      buttons: [
+        {
+          text: "Ok",
+          addClass: "",
+          // Whether to trigger this button when the user hits enter in a single line prompt.
+          promptTrigger: true,
+          click: function(notice, value){
+            notice.remove();
+            notice.get().trigger("pnotify.confirm", [notice, value]);
+          }
+        }
+      ]
+    };
 
     this.init();
 

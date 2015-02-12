@@ -62,6 +62,7 @@ var Html = (function ($, module) {
 
     var toolbar = module.buildHtml('div', {
       'class': 'btn-toolbar'
+      , 'style': 'margin-top: 5px;'
     }, {});
 
     toolbar = buildLeftBox(v, toolbar, v.options.modes);
@@ -77,7 +78,7 @@ var Html = (function ($, module) {
   };
 
   function buildLeftBox(v, container, actions){
-    var leftBox   = module.buildHtml('div', {'class': 'info'}, {});
+    var leftBox   = module.buildHtml('span', {'class': 'tabnav-left'}, {});
     container = buildBoxFooter(v, container, leftBox, actions);
     return container;
   }
@@ -102,18 +103,25 @@ var Html = (function ($, module) {
       var icon  = action.icon;
       var cb    = action.callback;
 
-      var iconStr = '<span class="' + icon + '"></span>';
+      var hasLabel = typeof(action.label) !== 'undefined';
+
+      var iconStr = (!hasLabel
+        ? '<span class="' + icon + '"></span>'
+        : action.label
+      );
+
+
       var handler = v.namespace + '-' + name;
 
-      var buttonHtml = module.buildHtml('button', iconStr, {
-        'type': 'button'
-        , 'title': title
-        , 'data-provider': v.namespace
-        , 'data-handler': handler
-      });
+
+      var buttonHtml = (hasLabel
+        ? buildOcticonFooterButton(name, title, v, handler, iconStr)
+        : buildOcticonButton(name, title, v, handler, iconStr)
+      );
 
       buttonHtml.tooltipster({
-          position: 'right',
+          position: 'top',
+          hideOnClick: true,
           theme: 'tooltip-custom-theme'
         }
       );
@@ -157,6 +165,17 @@ var Html = (function ($, module) {
     return module.buildHtml('button', iconStr, {
       'type': 'button'
       , 'class': !isTrash ? 'violette-button octicon-button btn-dark-link' : 'violette-button octicon-button danger btn-dark-link'
+      , 'title': title
+      , 'data-provider': v.namespace
+      , 'data-handler': handler
+    });
+  }
+
+  function buildOcticonFooterButton(name, title, v, handler, iconStr){
+    var darkTheme = name === 'document';
+    return module.buildHtml('button', iconStr, {
+      'type': 'button'
+      , 'class': darkTheme ? 'violette-button minibutton dark' : 'violette-button minibutton'
       , 'title': title
       , 'data-provider': v.namespace
       , 'data-handler': handler
