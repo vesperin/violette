@@ -55,6 +55,7 @@ var Vesperize = (function ($, store) {
       that.staging.children().remove();
 
       that.staging.hide();
+      that.codemirror.setOption("readOnly", false);
 
       deleteButtonHandler(v, v.namespace + '-' + 'close');
       deleteButtonHandler(v, v.namespace + '-' + 'next');
@@ -87,6 +88,7 @@ var Vesperize = (function ($, store) {
 
     v.staging.show();
     nextNote(v);
+    v.codemirror.setOption("readOnly", true);
     v.codemirror.focus();
   }
 
@@ -557,6 +559,7 @@ var Vesperize = (function ($, store) {
       that.staging.hide();
 
       that.codemirror.swapDoc(that.buffers[originalMarker]);
+      that.codemirror.setOption("readOnly", false);
       that.buffers = null;
 
       deleteButtonHandler(that, v.namespace + '-' + 'close');
