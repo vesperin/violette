@@ -2,7 +2,7 @@
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-var Vesperize = (function ($) {
+var Vesperize = (function ($, store) {
   "use strict";
 
   /**
@@ -12,11 +12,82 @@ var Vesperize = (function ($) {
    */
   var defaultClassname = 'Scratched';
 
+  function openInputDialog(editor, text, shortText, deflt, f){
+    //noinspection JSUnresolvedVariable
+    if (editor.openDialog) {
+      //noinspection JSUnresolvedFunction
+      editor.openDialog(text, f, {value: deflt});
+    } else {
+      f(prompt(shortText, deflt));
+    }
+  }
 
-  function deleteCloseButtonHandler(v){
-    var handlerIndex = v.handler.indexOf(v.namespace + '-' + 'close');
+
+  function deleteButtonHandler(v, name){
+    var handlerIndex = v.handler.indexOf(name);
     delete v.handler[handlerIndex];
     delete v.callback[handlerIndex];
+  }
+
+
+  function creatingNotesSection(v){
+    v.disableButtons();
+    notifyContent('info', v, 'Entering notes view');
+
+    var left  = Html.buildHtml('span', {'class': 'tabnav-left'}, {});
+
+    v.displayer = Html.buildHtml('span', '', {'class': 'note'});
+    left.append(v.displayer);
+
+    var right = Html.buildHtml('span', {'class': 'tabnav-right'}, {});
+    right.append(Html.buildNextButton(v));
+    right.append(Html.buildHtml('span', {'class':'break'}, {}));
+    right.append(Html.buildClosingButton(v));
+
+    v.staging.append(left);
+    v.staging.append(right);
+    v.handler.push(v.namespace + '-' + 'close');
+    v.callback.push(function(that){
+
+      notifyContent('info', that, 'Exiting notes view');
+
+      that.staging.children().hide();
+      that.staging.children().remove();
+
+      that.staging.hide();
+
+      deleteButtonHandler(v, v.namespace + '-' + 'close');
+      deleteButtonHandler(v, v.namespace + '-' + 'next');
+
+      that.enableButtons();
+      that.codemirror.setSelection({'line':0, 'ch':0});
+    });
+    v.handler.push(v.namespace + '-' + 'next');
+
+    var nextNote = function(that){
+      var next     = that.notes.next();
+      var text     = next.text;
+      var location = next.range;
+
+      var from = {'line':location.from.line, 'ch':location.from.col};
+      var to   = {'line':location.to.line, 'ch':location.to.col};
+
+      (function(f, t, c){
+        var editor = c.codemirror;
+        c.codemirror.operation(function() {
+          editor.getDoc().setSelection(f, t);
+        });
+      })(from, to, that);
+
+      that.displayer.text(text);
+      that.codemirror.focus();
+    };
+
+    v.callback.push(nextNote);
+
+    v.staging.show();
+    nextNote(v);
+    v.codemirror.focus();
   }
 
   /**
@@ -75,7 +146,7 @@ var Vesperize = (function ($) {
 
       that.staging.hide();
 
-      deleteCloseButtonHandler(v);
+      deleteButtonHandler(v, v.namespace + '-' + 'close');
 
       $(that.history)[0].destroy();
       that.history = null;
@@ -205,9 +276,10 @@ var Vesperize = (function ($) {
     v.codemirror.focus();
   }
 
-  function shareDialog(v, content) {
+  function shareDialog(v, content, tinyUrl) {
     var modal_overlay;
     var opts = {};
+    tinyUrl  = tinyUrl || 'no url';
 
     opts.title = "Sharing Example";
     opts.text = content + "!";
@@ -218,7 +290,7 @@ var Vesperize = (function ($) {
     opts.confirm = {
         prompt: true,
         prompt_multi_line: true,
-        prompt_default: 'https://draftin.com/documents/568698?token=0KJMclyW_dTbsh2rq9jgMC7r1ZsLmieAvQCspoE20ynT7YaXV7maDWUlUjf1K-8uaPhX_pBiCwK0CEj5OeBg7QU'
+        prompt_default: tinyUrl
     };
 
     opts.buttons = {
@@ -365,7 +437,7 @@ var Vesperize = (function ($) {
    */
   function supportsHtmlStorage() {
     try {
-      return 'localStorage' in window && window.localStorage !== null;
+      return store.enabled;
     } catch (e) {
       return false;
     }
@@ -487,7 +559,7 @@ var Vesperize = (function ($) {
       that.codemirror.swapDoc(that.buffers[originalMarker]);
       that.buffers = null;
 
-      deleteCloseButtonHandler(that);
+      deleteButtonHandler(that, v.namespace + '-' + 'close');
 
       expandEverything(that.codemirror);
 
@@ -552,17 +624,7 @@ var Vesperize = (function ($) {
         var stage = reply.stage;
         var where = stage.where; // {array of arrays}
 
-        for (var l = 0; l < where.length; l++) {
-          var fold = where[l];
-          var location = Utils.createLocation(codemirror.getValue(), fold[0], fold[1]);
-          //noinspection JSUnresolvedFunction
-          v.codemirror.foldCode(
-            Editor.Pos(
-              location.from.line,
-              location.from.col
-            )
-          );
-        }
+        summarize(v, where);
 
       } else { // failure
         var text = 'There was an internal server error.';
@@ -739,7 +801,25 @@ var Vesperize = (function ($) {
         name: 'annotate'
         , title: 'Annotates code sections'
         , icon: 'octicon octicon-comment'
-        , callback: function (v/*Violette*/) {}
+        , callback: function (v/*Violette*/) {
+          var codemirror = v.codemirror;
+
+          var other = codemirror;
+          // opens a dialog
+          openInputDialog(codemirror, Html.buildInput().html(), "Annotates selection:", "", function(description){
+              other.operation(function(){
+                 var content   = other.getValue();
+                 var selection = other.getSelection();
+                 selection     = "" === selection ? content : selection;
+                 var location  = Utils.selectionLocation(other, content, selection);
+                 var note = Notes.buildNote(description, location);
+                 v.notes.addNote(note);
+                 console.log(v.notes.size());
+              });
+
+          });
+
+        }
       },
       {
         name: 'wrap'
@@ -820,7 +900,14 @@ var Vesperize = (function ($) {
         'name': 'notes'
         , 'title': 'Launch notes'
         , 'label': 'Notes'
-        , callback: function(v){}
+        , callback: function(v){
+           if(v.notes.size() > 0 ){
+             creatingNotesSection(v);
+           } else {
+             notifyContent('notice', v, 'You have not annotated anything');
+           }
+           v.codemirror.focus();
+        }
       }
     ]
     , 'modes':  [
@@ -828,13 +915,47 @@ var Vesperize = (function ($) {
     , 'social': [
       {
         name: 'share'
-        , title: 'Share Code Example'
+        , title: 'Share your master piece'
         , label: 'SHARE'
         , callback: function(v){
 
+          var codemirror = v.codemirror;
+          var content = codemirror.getValue();
 
+          if(null !== v.tinyUrl){
+            shareDialog(v, "Anyone with this link can see your fantastic work", v.tinyUrl);
+            return;
+          }
 
-          shareDialog(v, "Anyone with this link can see your fantastic work.");
+          // nothing to save.
+          if ("" == content) {
+            notifyContent('notice', v, "There is nothing to save");
+            return;
+          }
+
+          v.classname = compareAndSetClassName(content, v.classname, v);
+
+          var that = v;
+          Refactoring.format(v.classname, content, function(reply){
+             if(reply.draft){
+               var source = reply.draft.after;
+               that.stopwatch.stop();
+               source.elapsedtime = that.stopwatch.toString();
+               source.comments    = that.notes.toHashArray();
+               source.confidence  = 5; // if we are sharing, then it means we like what we did
+
+               Refactoring.saveCodeSnippet(source, function(reply){
+                 if(reply.info){
+                   that.tinyUrl     = reply.info.messages[1];
+                   that.exampleId   = reply.info.messages[2];
+                   shareDialog(that, "Anyone with this link can see your fantastic work", that.tinyUrl);
+                 } else {
+                   notifyContent('error', that, "Unable to save your code example")
+                 }
+               });
+
+             }
+          });
         }
       },
       {
@@ -880,8 +1001,14 @@ var Vesperize = (function ($) {
     this.drafts     = null;
     this.history    = null; // edit tracker
 
+    // notes
+    this.notes      = new Notes(this.primaryKey);
+    this.displayer  = null;
+
     // use entirely with local storage
-    this.content = null;
+    this.content   = null;
+    this.tinyUrl   = null;
+    this.exampleId = null;
 
     // create the multistage object
     this.multistage     = {};
@@ -895,7 +1022,7 @@ var Vesperize = (function ($) {
       "context": this.parent
     };
 
-    PNotify.removeAll();
+    PNotify.removeAll(); // remove any notification element (just in case)
 
     // must be initialize in other to use octicon icons
     // for their alerts
@@ -939,16 +1066,12 @@ var Vesperize = (function ($) {
    *
    * @return {Vesperize} object
    */
-  // todo(Huascar) DONE
   Vesperize.prototype.init = function () {
     // main violette instance
     var that = this;
 
-    // check local storage and see if we can recover the last
-    // saved edit made by the current user.
+    // check local storage and see if we can recover any saved information
     this.checkStorage();
-    // check local storage and see if we can recover all marked drafts
-    this.checkMarkedDrafts();
 
     // build internal editor if we don't have one available
     if (this.editor == null) {
@@ -1074,8 +1197,21 @@ var Vesperize = (function ($) {
 
 
     // if editing, then change the status
-    this.codemirror.on('beforeChange', function(){
+    this.codemirror.on('beforeChange', function(instance, change){
       that.status.text('NOT SAVED ');
+      console.log(change.origin);
+      instance.old = instance.getValue();
+    });
+
+    this.codemirror.on('change', function(instance, change){
+      console.log(change.origin);
+      if(instance.old !== instance.getValue() && that.tinyUrl !== null){
+        notifyContent('info', that, "Saving NEW code example");
+        // If so, then the current is becoming a new code example
+        that.tinyUrl    = null;
+        that.stopwatch  = new Stopwatch();
+        instance.old    = null; // cleaning our stuff afterwards
+      }
     });
 
     // makes sure that when we exit fullscreen mode
@@ -1105,11 +1241,17 @@ var Vesperize = (function ($) {
    * Private: checks local HTML storage for saved code example.
    */
   Vesperize.prototype.checkStorage = function () {
+    this.checkSavedContent();
+    this.checkSavedAndMarkedDrafts();
+    this.checkOtherSavedInfo();
+  };
+
+  Vesperize.prototype.checkSavedContent = function () {
     if (!supportsHtmlStorage()) {
       return;
     }
 
-    var content = localStorage.getItem(this.primaryKey);
+    var content = store.get(this.primaryKey);
     if (content) {
       this.content = content;
       return this;
@@ -1126,14 +1268,14 @@ var Vesperize = (function ($) {
   /**
    * Private: checks local HTML storage for saved all marked drafts.
    */
-  Vesperize.prototype.checkMarkedDrafts = function () {
+  Vesperize.prototype.checkSavedAndMarkedDrafts = function () {
     if (!supportsHtmlStorage()) {
       return;
     }
 
-    var drafts = localStorage.getItem(this.primaryKey + 'drafts');
+    var drafts = store.get(this.primaryKey + 'drafts');
     if (drafts) {
-      this.drafts = JSON.parse(drafts);
+      this.drafts = drafts;
       return this;
     }
 
@@ -1142,6 +1284,37 @@ var Vesperize = (function ($) {
       this.drafts =  {};
       return this;
     }
+  };
+
+
+  /**
+   * Private: checks local HTML storage for saved information about the example;
+   * e.g., exampleId, tinyUrl, comments, etc.
+   */
+  Vesperize.prototype.checkOtherSavedInfo = function () {
+    if (!supportsHtmlStorage()) {
+      return;
+    }
+
+    // 1. Check for example id
+    var eid = store.get(this.primaryKey + 'eid');
+    if(eid){ // if exampleID is found, it is safe to assume we have its tinyUrl
+      this.exampleId = eid;
+      this.tinyUrl   = store.get(this.primaryKey + 'tinyUrl');
+    }
+
+    // 2. comments
+    var notes = store.get(this.primaryKey + 'notes');
+    if (notes) {
+      this.notes = new Notes(this.primaryKey);
+      for(var idx = 0; idx < notes.notes.length; idx++){
+        var n = notes.notes[idx];
+        this.notes.addNote(n);
+      }
+
+      return this;
+    }
+
   };
 
 
@@ -1182,10 +1355,51 @@ var Vesperize = (function ($) {
       return this;
     }
 
-    if(JSON.stringify(localStorage.getItem(this.primaryKey)) !== JSON.stringify(value)){
-      localStorage.setItem(this.primaryKey, value);
+    // save content
+    var localContent = store.get(this.primaryKey);
+
+    if(localContent !== value){
+      store.set(this.primaryKey, value);
       this.content = null; // we don't need content anymore
     }
+
+    // save exampleId
+    var key = this.primaryKey + 'eid';
+    var eid = this.exampleId || null;
+
+    var localEid = store.get(key);
+    if(localEid !== eid){
+      store.set(key, eid);
+    }
+
+    // save tinyUrl
+    key = this.primaryKey + 'tinyUrl';
+    var turl = this.tinyUrl || null;
+    var localTinyUrl = store.get(key);
+
+    if(localTinyUrl !== turl){
+      store.set(key, turl);
+    }
+
+    // save drafts
+    key = this.primaryKey + 'drafts';
+    var drafts  = this.drafts;
+
+    var localDrafts = store.get(key);
+
+    if(store.serialize(localDrafts) !== store.serialize(drafts)) {
+      store.set(key, drafts);
+    }
+
+    // save notes
+    key = this.primaryKey + 'notes';
+    var notes = {'notes': this.notes.toRawArray() };
+    var localNotes = store.get(key);
+
+    if(store.serialize(localNotes) !== store.serialize(notes)){
+      store.set(key, notes);
+    }
+
 
     return this;
   };
@@ -1328,4 +1542,4 @@ var Vesperize = (function ($) {
   };
 
   return Vesperize;
-}(window.jQuery));
+}(window.jQuery, window.store));

@@ -570,3 +570,64 @@ fieldset[disabled] .octicon-danger.active {
     top: 6px
 }
 
+/*Input Dialog*/
+.right-inner-addon {
+    position: relative;
+}
+
+.right-inner-addon input {
+    padding-right: 15px;
+    margin: 5px 5px 5px -1px;
+    width: 100%;
+}
+
+.right-inner-addon i{
+    position:absolute;
+    right: 0;
+    padding: 10px 12px;
+}
+
+/*Next Button*/
+
+.next {
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1;
+    color: #000;
+    text-shadow: 0 1px 0 #fff;
+    opacity: .2;
+    filter: alpha(opacity=20)
+}
+
+.next:hover, .next:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+    opacity: .5;
+    filter: alpha(opacity=50)
+}
+
+button.next {
+    padding: 0;
+    cursor: pointer;
+    background: 0 0;
+    border: 0;
+    -webkit-appearance: none
+}
+
+.break{
+    display:inline-block;
+    width:5px;
+    height:18px;
+    margin:0 6px;
+    vertical-align:middle;
+}
+
+.note{
+    font-size: 10px;
+    color: #34495e;
+    font-family:"futura-pt",Helvetica,Arial,sans-serif;
+    font-weight: 700;
+    text-rendering:optimizeLegibility;
+    letter-spacing:0.1em;
+}

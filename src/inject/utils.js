@@ -247,14 +247,14 @@ var Utils = (function ($, module) {
   };
 
   /**
-   * calculates the offsets of a code selection.
+   * generates the location of a code selection.
    *
    * @param cm codemirror
    * @param content code example's content
    * @param selection user selection
-   * @return {{start: number, end: number}}
+   * @return location object
    */
-  module.selectionOffsets = function (cm, content, selection) {
+  module.selectionLocation = function(cm, content, selection){
     var from = cm.getCursor("from");
 
     var lines = content.split('\n');
@@ -276,6 +276,22 @@ var Utils = (function ($, module) {
         count += lines[i].length;
       }
     }
+
+    location = location || null;
+
+    return location;
+  };
+
+  /**
+   * calculates the offsets of a code selection.
+   *
+   * @param cm codemirror
+   * @param content code example's content
+   * @param selection user selection
+   * @return {{start: number, end: number}}
+   */
+  module.selectionOffsets = function (cm, content, selection) {
+    var location = module.selectionLocation(cm, content, selection);
 
     var start = 0;
     var end = 0;

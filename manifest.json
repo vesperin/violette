@@ -44,6 +44,7 @@
         "css/codemirror.css",
         "css/clean-scrollbar.css",
         "css/foldgutter.css",
+        "css/dialog.css",
         "css/tooltipster.css",
         "css/pnotify.custom.min.css",
         "css/tomorrow.min.css",
@@ -52,6 +53,7 @@
       ],
 
       "js": [
+        "js/storage/store.js",
         "js/cm/codemirror.js",
         "js/cm/clike.js",
         "js/cm/foldcode.js",
@@ -62,6 +64,7 @@
         "js/cm/mark-selection.js",
         "js/cm/matchbrackets.js",
         "js/cm/selection-pointer.js",
+        "js/cm/dialog.js",
         "js/jquery/jquery.min.js",
         "js/highlightjs/highlight.min.js",
         "js/bootstrap/bootstrap.min.js",

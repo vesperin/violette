@@ -203,6 +203,15 @@ var Html = (function ($, module) {
   }
 
 
+  function buildNextButton(v){
+    return Html.buildHtml('button', '<span class="octicon octicon-arrow-right" aria-hidden="true"></span>', {
+      'class': 'next'
+      , 'aria-label': 'Next'
+      , 'data-provider': v.namespace
+      , 'data-handler': v.namespace + '-' + 'next'
+      , 'title': 'Next note'
+    });
+  }
 
 
   /**
@@ -335,7 +344,26 @@ var Html = (function ($, module) {
     return tracker;
   };
 
+  module.buildInput = function(){
+    var shell = module.buildHtml('div', {
+      'class': 'col-md-12'
+    }, {});
 
+    var inside = '<i class="octicon octicon-pencil"></i>' +
+      '<input type="text" class="form-control" style="border-color: #d6dbdf;box-shadow: none;" ' +
+      'placeholder="Annotate selection" />';
+
+    var entry = module.buildHtml('div', inside, {
+      'class': 'right-inner-addon'
+      , 'style': 'margin-left: 5px;'
+    });
+
+    shell.append(entry);
+
+    return shell;
+  };
+
+  module.buildNextButton    = buildNextButton;
   module.buildClosingButton = buildClosingButton;
 
 
