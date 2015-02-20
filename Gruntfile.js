@@ -10,6 +10,7 @@ module.exports = function(grunt) {
         src: [
           'src/inject/utils.js'
           , 'src/inject/matcher.js'
+          , 'src/inject/drafts.js'
           , 'src/inject/notes.js'
           , 'src/inject/html.js'
           , 'src/inject/stopwatch.js'
