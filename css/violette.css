@@ -24,6 +24,12 @@
     border-bottom: 1px dashed #ddd;
 }
 
+.violette-history {
+    margin: 0;
+    height: 50px;
+    border-bottom: 1px dashed #ddd;
+}
+
 .violette-editor > .violette-preview {
     background: #fff;
     border-top: 1px dashed #ddd;
@@ -229,7 +235,7 @@ fieldset[disabled] .octicon-danger.active {
     float:left;
 }
 
-.tabnav-center{
+.tabnav-center {
     position:relative;
     left:15px;
     font-size: 12px;
@@ -540,9 +546,9 @@ fieldset[disabled] .octicon-danger.active {
 }
 
 /*width: 350px*/
-.noUi-horizontal { left: 8px; width: 350px; height:12px; bottom: 1px;top: 5px;}
+.noUi-horizontal { left: 8px; width: 200px; height:12px; bottom: 1px;top: 5px;}
 .noUi-horizontal .noUi-handle {
-    width: 14px;
+    width: 17px;
     height: 18px;
     left: -8px;
     top: -4px
@@ -623,11 +629,11 @@ button.next {
     vertical-align:middle;
 }
 
-.note{
-    font-size: 10px;
+.note {
+    margin-top: 5px;
+    height:30px;
     color: #34495e;
+    font-size: 12px;
     font-family:"futura-pt",Helvetica,Arial,sans-serif;
-    font-weight: 700;
     text-rendering:optimizeLegibility;
-    letter-spacing:0.1em;
 }

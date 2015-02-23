@@ -5,6 +5,17 @@ var Utils = (function ($, module) {
   "use strict";
 
 
+  function contains(array, target){
+    var i = array.length;
+    while (i--) {
+      // see http://bit.ly/1hlDwmH for details on this fast and limited solution
+      if (JSON.stringify(array[i]) === JSON.stringify(target)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   function getContent(v, container){
     var currentContent = null;
     if (!container.is('textarea')) { // it must be a `pre` element
@@ -345,6 +356,7 @@ var Utils = (function ($, module) {
   module.debounce   = debounce;
   module.count      = countSloc;
   module.getContent = getContent;
+  module.contains   = contains;
 
   return module;
 

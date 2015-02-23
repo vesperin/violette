@@ -14,7 +14,6 @@ var Drafts = (function () {
     this.drafts         = {};
     this.drafts[owner]  = [];
     this.owner          = owner;
-    this.at             = 0;
   };
 
 
@@ -33,6 +32,51 @@ var Drafts = (function () {
       , 'after':  after
       , 'notes':  notes
     };
+  };
+
+  /**
+   * Marks a new draft.
+   * @param v Vesperize object
+   * @param value the updated code
+   * @param callback some function to be called if a new draft is marked.
+   */
+  Drafts.mark = function(v, value, callback){
+    if(v.drafts.empty()){ // let's create the NULL draft (aka the origin)
+      var b   = "";
+      var a   = v.codemirror.getValue();
+      v.notes = Notes.transfer(v, store.get(v.primaryKey), v.notes);
+      v.drafts.newDraft(
+        'No changes', b, a, v.notes.toJSON()
+      );
+    }
+
+
+    // retrieved saved content
+    var last = v.drafts.last();
+    var lastContent = last.after;
+
+    if(lastContent !== value){
+      var before = lastContent;
+      var after  = value;
+      var name   = v.lastaction;
+
+      // if the `lastaction` is a refactoring, then the v.lastaction should
+      // not be null. If it is null when marking a draft, then it means we are
+      // manually editing the example
+      name       = name == null ? 'Manual Edit' : name;
+      // transfer only the notes whose selections are still valid
+      v.notes    = Notes.transfer(v, before, v.notes);
+      v.drafts.newDraft(
+        name,
+        before,
+        after,
+        v.notes.toJSON()
+      );
+
+      v.lastaction = null;
+
+      callback('info', v, 'A new draft has been marked!');
+    }
   };
 
 
@@ -57,33 +101,52 @@ var Drafts = (function () {
   /**
    * Returns the last positioned draft.
    */
-  Drafts.prototype.current = function(){
-    return this.getDraft(this.at);
+  Drafts.prototype.last = function(){
+    return this.getDraft(this.size() - 1);
   };
+
 
   /**
    * Gets the draft at a given index.
    *
    * @param idx the location where a note is stored.
-   * @return {*} the note object.
+   * @return {*} the note object or undefined.
    */
   Drafts.prototype.getDraft = function(idx){
     if(idx < 0 || idx > this.size()) {
       return null;
     }
 
-    this.at = idx;
-
     return this.drafts[this.owner][idx];
   };
 
 
-  Drafts.prototype.backward = function(idx){
-    return this.at > idx;
+  Drafts.prototype.contains = function(idx){
+     return this.drafts[this.owner][idx] !== undefined;
   };
 
-  Drafts.prototype.forward = function(idx){
-    return !this.backward(idx);
+  Drafts.prototype.empty = function(){
+    return this.size() == 0;
+  };
+
+
+  /**
+   * Adds a new draft object.
+   *
+   * @param name the name of draft
+   * @param before code before draft
+   * @param after code after draft
+   * @param notes current notes
+   */
+  Drafts.prototype.newDraft = function(name, before, after, notes){
+    this.addDraft(Drafts.buildDraft(name, before, after, notes));
+  };
+
+
+  Drafts.prototype.update = function(idx, notes){
+    if(this.contains(idx)){
+      this.drafts[this.owner][idx].notes = notes;
+    }
   };
 
 

@@ -4,17 +4,6 @@
 var Notes = (function () {
   "use strict";
 
-  function contains(array, target){
-    var i = array.length;
-    while (i--) {
-      // see http://bit.ly/1hlDwmH for details on this fast and limited solution
-      if (JSON.stringify(array[i]) === JSON.stringify(target)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   /**
    * Creates a new Notes object
    * @param owner Vesperize object
@@ -51,6 +40,113 @@ var Notes = (function () {
     };
   };
 
+  function jumpToLine(editor, i) {
+    var t = editor.charCoords({line: i, ch: 0}, "local").top;
+    var middleHeight = editor.getScrollerElement().offsetHeight / 2;
+    editor.scrollTo(null, t - middleHeight - 5);
+  }
+
+  Notes.nextNote = function(that){
+    var next     = that.notes.next();
+    if(!next) { return; }
+    var text     = next.text;
+    var location = next.range;
+
+    var from = {'line':location.from.line, 'ch':location.from.col};
+    var to   = {'line':location.to.line, 'ch':location.to.col};
+
+    (function(f, t, c){
+      var editor = c.codemirror;
+      c.codemirror.operation(function() {
+        editor.getDoc().setSelection(f, t);
+        jumpToLine(editor, f.line);
+      });
+    })(from, to, that);
+
+    text = text.substring(0, 1).toUpperCase() + text.substring(1);
+    that.displayer.text(text);
+    that.codemirror.focus();
+  };
+
+
+  function getBetween(doc, start, end) {
+    var out = [], n = start.line;
+    doc.iter(start.line, end.line + 1, function(line) {
+      var text = line.text;
+      if (n == end.line) text = text.slice(0, end.ch);
+      if (n == start.line) text = text.slice(start.ch);
+      out.push(text);
+      ++n;
+    });
+    return out;
+  }
+
+  // http://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Dice's_coefficient
+  function diceCoefficient(string1, string2) {
+    var intersection = 0;
+    var length1 = string1.length - 1;
+    var length2 = string2.length - 1;
+    if(length1 < 1 || length2 < 1) return 0;
+    var bigrams = [];
+    var i;
+    for(i = 0; i < length2; i++) {
+      bigrams.push(string2.substr(i,2));
+    }
+
+    for(i = 0; i < length1; i++) {
+      var eachBigram = string1.substr(i, 2);
+      for(var j = 0; j < length2; j++) {
+        if(eachBigram == bigrams[j]) {
+          intersection++;
+          bigrams[j] = null;
+          break;
+        }
+      }
+    }
+
+    return (2.0 * intersection) / (length1 + length2);
+  }
+
+
+  Notes.copyNotes = function(key, array){
+    array = array || [];
+    var notes  = new Notes(key);
+    var len    = array.length;
+    for(var n = 0; n < len; n++){
+      var aNote = array[n];
+      notes.addNote(aNote);
+    }
+    return notes;
+  };
+
+
+  Notes.transfer = function(v, before, notes/*Notes object*/){
+    var newNotes = new Notes(v.primaryKey);
+    var editor   = v.codemirror;
+
+    var array    = notes.toRawArray();
+    var len      = array.length;
+    for(var idx = 0; idx < len; idx++){
+      // from: {line, ch}, to: {line, ch}
+      var range  = array[idx].range;
+      var from   = {'line': range.from.line, 'ch': range.from.col};
+      var to     = {'line': range.to.line, 'ch': range.to.col};
+      var select = getBetween(editor.getDoc(), from, to);
+      if(select){
+        var markedDoc = new Editor.Doc(before, 'text/x-java');
+        var marked    = getBetween(markedDoc, from, to);
+        var current   = select.join("\n");
+        var expected  = marked.join("\n");
+        var similar   = diceCoefficient(expected, current);
+        if(similar > 0.8){
+          newNotes.addNote(array[idx])
+        }
+      }
+    }
+
+    return newNotes;
+  };
+
 
   /**
    * Adds a note object.
@@ -59,7 +155,7 @@ var Notes = (function () {
    * @param callback callback of the form function({payload : {size: 1}})
    */
   Notes.prototype.addNote = function(note, callback){
-     if(!contains(this.vault[this.owner], note)){
+     if(!Utils.contains(this.vault[this.owner], note)){
        this.vault[this.owner].push(note);
        var that = this;
        if(callback){
@@ -126,6 +222,10 @@ var Notes = (function () {
     return this.current();
   };
 
+  Notes.prototype.empty = function(){
+    return this.size() == 0;
+  };
+
   /**
    * Returns the number of comments contained in this object.
    */
@@ -173,6 +273,14 @@ var Notes = (function () {
    */
   Notes.prototype.toHashArray = function(){
     return this.toArray(Notes.formatNote);
+  };
+
+  /**
+   * Return a JSON representation of the Notes object.
+   * @return {{notes: *}}
+   */
+  Notes.prototype.toJSON = function(){
+    return {'notes': this.toRawArray() }
   };
 
   return Notes;

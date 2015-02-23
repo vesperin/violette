@@ -23,16 +23,26 @@ var Vesperize = (function ($, store) {
   }
 
 
+  function markNewDraft(v, value){
+
+    Drafts.mark(v, value, notifyContent);
+
+    return this;
+  }
+
   function deleteButtonHandler(v, name){
     var handlerIndex = v.handler.indexOf(name);
     delete v.handler[handlerIndex];
     delete v.callback[handlerIndex];
   }
 
-
+  // todo(Huascar) find code sections that can be moved to Html
   function creatingNotesSection(v){
     v.disableButtons();
     notifyContent('info', v, 'Entering notes view');
+
+    v.staging.removeClass('violette-history');
+    v.staging.attr('class', 'violette-multistage');
 
     var left  = Html.buildHtml('span', {'class': 'tabnav-left'}, {});
 
@@ -62,34 +72,34 @@ var Vesperize = (function ($, store) {
 
       that.enableButtons();
       that.codemirror.setSelection({'line':0, 'ch':0});
+
+      that.displayer = null;
     });
     v.handler.push(v.namespace + '-' + 'next');
 
-    var nextNote = function(that){
-      var next     = that.notes.next();
-      var text     = next.text;
-      var location = next.range;
 
-      var from = {'line':location.from.line, 'ch':location.from.col};
-      var to   = {'line':location.to.line, 'ch':location.to.col};
-
-      (function(f, t, c){
-        var editor = c.codemirror;
-        c.codemirror.operation(function() {
-          editor.getDoc().setSelection(f, t);
-        });
-      })(from, to, that);
-
-      that.displayer.text(text);
-      that.codemirror.focus();
-    };
-
-    v.callback.push(nextNote);
+    v.callback.push(Notes.nextNote);
 
     v.staging.show();
-    nextNote(v);
+    Notes.nextNote(v);
     v.codemirror.setOption("readOnly", true);
     v.codemirror.focus();
+  }
+
+  // todo(Huascar) find code sections that can be moved to Html
+  function buildNotesSection(v, container){
+
+    var left  = Html.buildHtml('span', {'class': 'tabnav-left'}, {});
+
+    v.displayer = Html.buildHtml('span', '', {'class': 'note'});
+    left.append(v.displayer);
+
+    container.append(left);
+    v.handler.push(v.namespace + '-' + 'next');
+
+
+    v.callback.push(Notes.nextNote);
+    return container;
   }
 
   /**
@@ -98,16 +108,38 @@ var Vesperize = (function ($, store) {
    *
    * @param v Vesperize object
    */
+  // todo(Huascar) find code sections that can be moved to Html
   function replayHistory(v){
 
     v.disableButtons();
     notifyContent('info', v, 'Entering history view');
 
+    v.staging.removeClass('violette-multistage');
+    v.staging.attr('class', 'violette-history');
+
+    var top     = Html.buildHtml('div', {
+      'class': 'btn-toolbar'
+      , 'style': 'margin-left: 5px;'
+    }, {});
+
+    var bottom  = Html.buildHtml('div', {
+      'class': 'btn-toolbar'
+    }, {});
+
+    top = buildNotesSection(v, top);
+
     var left  = Html.buildHtml('span', {'class': 'tabnav-left'}, {});
     var right = Html.buildHtml('span', {'class': 'tabnav-right'}, {});
-    var tip   = Html.buildHtml('span', 'Hello', {'id': Utils.brand('value'), 'class': 'tabnav-center'});
+    var tip   = Html.buildHtml('span', '', {
+      'id': Utils.brand('value'),
+      'class': 'tabnav-center',
+      'style': 'margin-left:7px;'
+    });
+
 
     // todo(Huascar) implement drafts tracking
+    var that = v;
+    that.codemirror.setOption("readOnly", true);
     function setValue(value, handleElement, slider){
       // 1. take the value and use it as the index for this.drafts[value]
       //    to get some data and access it to get the name of the draft
@@ -115,28 +147,59 @@ var Vesperize = (function ($, store) {
       // 3. use the select buffer thing to swap documents as the slider
       //    handle is dragged left or right
       // 4. WHen exiting, then put the original document back in place
-      tip.text(value);
+      var idx       = parseInt(value);
+      var available = that.drafts.contains(idx);
+      console.log(available);
+      var draft     = that.drafts.getDraft(idx);
+      var name = draft.name;
+      var code = draft.after;
+      $(tip).text(name);
+
+      that.codemirror.setValue(code);
+
+      that.notes = Notes.copyNotes(that.primaryKey, draft.notes.notes);
+      if(that.notes.empty()){
+        that.displayer.text("");
+        that.displayer.hide();
+        that.staging.css({
+          'height': '25px'
+        });
+      } else {
+        that.staging.css({
+          'height': '50px'
+        });
+        that.displayer.show();
+        Notes.nextNote(that);
+      }
     }
+
+    var min = [0];
+    var max = [];
+    max.push(v.drafts.size() - 1);
+    var start = [];
+    start.push(v.drafts.size());
 
     v.history = Html.buildEditTracker();
     left.append(v.history);
-    v.staging.append(left);
+    bottom.append(left);
 
     v.history.noUiSlider({
-      start: [ 0 ],
+      start: start,
       step: 1,
       connect: 'lower',
       range: {
-        'min': [0],
-        'max': [1000]
+        'min': min,
+        'max': max
       }
     });
 
     v.history.Link('lower').to(setValue);
 
-    v.staging.append(tip);
+    bottom.append(tip);
+    right.append(Html.buildNextButton(v));
+    right.append(Html.buildHtml('span', {'class':'break'}, {}));
     right.append(Html.buildClosingButton(v));
-    v.staging.append(right);
+    bottom.append(right);
 
     v.handler.push(v.namespace + '-' + 'close');
     v.callback.push(function(that){
@@ -149,6 +212,19 @@ var Vesperize = (function ($, store) {
       that.staging.hide();
 
       deleteButtonHandler(v, v.namespace + '-' + 'close');
+      deleteButtonHandler(v, v.namespace + '-' + 'next');
+
+      that.codemirror.setOption("readOnly", false);
+      that.enableButtons();
+
+      that.codemirror.setValue(store.get(that.primaryKey));
+
+      var savedNotes = store.get(that.primaryKey + 'notes');
+      if (savedNotes) {
+        that.notes = Notes.copyNotes(that.primaryKey, savedNotes.notes);
+      }
+
+      that.displayer = null;
 
       $(that.history)[0].destroy();
       that.history = null;
@@ -157,7 +233,12 @@ var Vesperize = (function ($, store) {
 
     });
 
+
+    v.staging.append(top);
+    v.staging.append(bottom);
+
     v.staging.show();
+    Notes.nextNote(v);
     v.codemirror.focus();
 
   }
@@ -357,7 +438,8 @@ var Vesperize = (function ($, store) {
   }
 
   function persistContent(v, content){
-    if(v.buffers == null){
+    // todo(Huascar) collapse into one if consisting of many `and` statements
+    if(v.buffers == null && v.history == null && v.displayer == null){
       v.persist(content);
       v.status.text('SAVED ');
     }
@@ -513,7 +595,7 @@ var Vesperize = (function ($, store) {
     }
 
 
-    // todo(Huascar) convert each stage into a button.
+    // todo(Huascar) convert each stage into a split button.
     var multistage  = v.multistage[v.id];
     var stages      = multistage.stages;
     var len         = stages.length;
@@ -600,7 +682,7 @@ var Vesperize = (function ($, store) {
       if (v.classname !== draft.name) {
         v.classname = draft.name;
       }
-
+      v.lastaction = reply.draft.cause;
       codemirror.setValue(draft.content);
     } else {
       if (reply.info) {
@@ -691,6 +773,7 @@ var Vesperize = (function ($, store) {
               // have a clean version of code snippet
               Refactoring.format(v.classname, content, function (reply) {
                 handleReply(v, reply);
+                v.lastaction = 'Delete comment';
               });
 
             } else {
@@ -825,32 +908,6 @@ var Vesperize = (function ($, store) {
         }
       },
       {
-        name: 'wrap'
-        , title: 'Wrap code inside a class'
-        , icon: 'octicon octicon-plus'
-        , callback: function (v/*Violette*/, newName) {
-        var codemirror = v.codemirror;
-        var content = codemirror.getValue();
-        var selection = codemirror.getSelection();
-
-        // nothing to refactor.
-        if ("" == content) return;
-
-        if ("" == selection) {
-          notifyContent('notice', v, "Please select something");
-        }
-
-        var range = Utils.selectionOffsets(codemirror, content, selection);
-
-        v.classname = compareAndSetClassName(content, v.classname, v);
-
-        Refactoring.renameSelectedMember(v.classname, newName, content,
-          range, function (reply) {
-            handleReply(v, reply);
-          });
-      }
-      },
-      {
         'name': 'stage'
         , 'title': 'Multi stage code example'
         , 'label': 'Stage'
@@ -895,8 +952,11 @@ var Vesperize = (function ($, store) {
             return;
           }
 
-          replayHistory(v);
-
+          if(!v.drafts.empty()){
+            replayHistory(v);
+          } else {
+            notifyContent('notice', v, 'You have no marked drafts');
+          }
         }
       },
       {
@@ -1002,8 +1062,9 @@ var Vesperize = (function ($, store) {
     this.staging    = null;
 
     // history
-    this.drafts     = null;
+    this.drafts     = new Drafts(this.primaryKey);
     this.history    = null; // edit tracker
+    this.lastaction = null;
 
     // notes
     this.notes      = new Notes(this.primaryKey);
@@ -1133,7 +1194,7 @@ var Vesperize = (function ($, store) {
               cm.foldCode(cm.getCursor());
             }
             , "Ctrl-S": function(cm){
-              // todo(Huascar) Save both a draft and the content
+              markNewDraft(that, cm.getValue());
               persistContent(that, cm.getValue());
               inspectCodeExample(that, cm.getValue());
             }
@@ -1279,15 +1340,14 @@ var Vesperize = (function ($, store) {
 
     var drafts = store.get(this.primaryKey + 'drafts');
     if (drafts) {
-      this.drafts = drafts;
-      return this;
+      this.drafts = new Drafts(this.primaryKey);
+      for(var idx = 0; idx < drafts.drafts.length; idx++){
+        var d = drafts.drafts[idx];
+        this.drafts.addDraft(d);
+      }
     }
 
-    // assert content is undefined and local content is null
-    if(this.drafts == null){
-      this.drafts =  {};
-      return this;
-    }
+    return this;
   };
 
 
@@ -1316,9 +1376,9 @@ var Vesperize = (function ($, store) {
         this.notes.addNote(n);
       }
 
-      return this;
     }
 
+    return this;
   };
 
 
@@ -1387,7 +1447,7 @@ var Vesperize = (function ($, store) {
 
     // save drafts
     key = this.primaryKey + 'drafts';
-    var drafts  = this.drafts;
+    var drafts  = this.drafts.toJSON();
 
     var localDrafts = store.get(key);
 
@@ -1397,7 +1457,7 @@ var Vesperize = (function ($, store) {
 
     // save notes
     key = this.primaryKey + 'notes';
-    var notes = {'notes': this.notes.toRawArray() };
+    var notes = this.notes.toJSON();
     var localNotes = store.get(key);
 
     if(store.serialize(localNotes) !== store.serialize(notes)){
