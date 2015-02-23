@@ -43,6 +43,9 @@ var Vesperize = (function ($, store) {
 
     v.staging.removeClass('violette-history');
     v.staging.attr('class', 'violette-multistage');
+    v.staging.css({
+      'height': '25px'
+    });
 
     var left  = Html.buildHtml('span', {'class': 'tabnav-left'}, {});
 
@@ -861,7 +864,7 @@ var Vesperize = (function ($, store) {
         name: 'rename'
         , title: 'Rename a selected element'
         , icon: 'octicon octicon-diff-renamed'
-        , callback: function (v/*Violette*/, newName) {
+        , callback: function (v/*Violette*/) {
           var codemirror = v.codemirror;
           var content = codemirror.getValue();
           var selection = codemirror.getSelection();
@@ -877,10 +880,27 @@ var Vesperize = (function ($, store) {
 
           v.classname = compareAndSetClassName(content, v.classname, v);
 
-          Refactoring.renameSelectedMember(v.classname, newName, content,
-            range, function (reply) {
-              handleReply(v, reply);
+          var other = codemirror;
+          openInputDialog(codemirror, Html.buildInput('New Name?').html(), "Enter new name:", selection, function(description){
+            other.operation(function(){
+              if(description === selection) return;
+
+              if(description !== null){
+                Refactoring.detectPartialSnippet(v.classname, content,
+                  function (reply) {
+                    var preprocess = requiresPreprocessing(reply);
+                    Refactoring.renameSelectedMember(v.classname, description,
+                      content, range, preprocess, function (reply) {
+                      handleReply(v, reply);
+                    });
+                  }
+                );
+              }
+
+            });
+
           });
+
         }
       },
       {

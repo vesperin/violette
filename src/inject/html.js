@@ -344,14 +344,15 @@ var Html = (function ($, module) {
     return tracker;
   };
 
-  module.buildInput = function(){
+  module.buildInput = function(placeholder){
+    placeholder = placeholder || "New Note?";
     var shell = module.buildHtml('div', {
       'class': 'col-md-12'
     }, {});
 
     var inside = '<i class="octicon octicon-pencil"></i>' +
       '<input type="text" class="form-control" style="border-color: #d6dbdf;box-shadow: none;" ' +
-      'placeholder="Annotate selection" />';
+      'placeholder="' + placeholder + '" />';
 
     var entry = module.buildHtml('div', inside, {
       'class': 'right-inner-addon'

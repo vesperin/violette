@@ -119,6 +119,11 @@ var Notes = (function () {
     return notes;
   };
 
+  function validRange(range){
+    return range.from.line != -1 && range.from.col != -1
+      && range.to.line != -1 && range.to.col != -1;
+  }
+
 
   Notes.transfer = function(v, before, notes/*Notes object*/){
     var newNotes = new Notes(v.primaryKey);
