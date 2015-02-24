@@ -44,7 +44,7 @@ var Drafts = (function () {
     if(v.drafts.empty()){ // let's create the NULL draft (aka the origin)
       var b   = "";
       var a   = v.codemirror.getValue();
-      v.notes = Notes.transfer(v, store.get(v.primaryKey), v.notes);
+      v.notes = Notes.transfer(v, v.notes);
       v.drafts.newDraft(
         'No changes', b, a, v.notes.toJSON()
       );
@@ -65,7 +65,7 @@ var Drafts = (function () {
       // manually editing the example
       name       = name == null ? 'Manual Edit' : name;
       // transfer only the notes whose selections are still valid
-      v.notes    = Notes.transfer(v, before, v.notes);
+      v.notes    = Notes.transfer(v, v.notes);
       v.drafts.newDraft(
         name,
         before,

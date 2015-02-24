@@ -20,13 +20,34 @@ var Notes = (function () {
    * Builds a note object.
    * @param text something the user wants to write about some selection.
    * @param range location of selection
+   * @param chunk annotated chunk
    * @return {{text: *, range: *[]}}
    */
-  Notes.buildNote = function(text, range){
+  Notes.buildNote = function(text, range, chunk){
     return {
       'text': text
       , 'range': range
+      , 'marked': chunk
     };
+  };
+
+
+  function validRange(range){
+    return range.from.line != -1 && range.from.col != -1
+      && range.to.line != -1 && range.to.col != -1;
+  }
+
+  Notes.chunkContent = function(content, location){
+    if("" === content || !content || !validRange(location)) {
+      return "<NONE>";
+    }
+
+    var markedDoc = new Editor.Doc(content, 'text/x-java');
+    var from = {'line':location.from.line, 'ch':location.from.col};
+    var to   = {'line':location.to.line, 'ch':location.to.col};
+
+    var marked    = getBetween(markedDoc, from, to);
+    return marked.join("\n");
   };
 
   Notes.formatNote = function(note){
@@ -119,33 +140,45 @@ var Notes = (function () {
     return notes;
   };
 
-  function validRange(range){
-    return range.from.line != -1 && range.from.col != -1
-      && range.to.line != -1 && range.to.col != -1;
+  function rebuildNote(content, expected, note, notes){
+    var startOffset = content.indexOf(expected);
+    if(startOffset != -1){
+      var endOffset   = startOffset + expected.length;
+      var newRange    = Utils.createLocation(content, startOffset, endOffset);
+      if(validRange(newRange)){
+        var newNote = note;
+        newNote.range = newRange;
+        notes.addNote(newNote);
+      }
+    }
   }
 
 
-  Notes.transfer = function(v, before, notes/*Notes object*/){
+  Notes.transfer = function(v, notes/*Notes object*/){
     var newNotes = new Notes(v.primaryKey);
     var editor   = v.codemirror;
+    var value    = editor.getValue() || "";
 
     var array    = notes.toRawArray();
     var len      = array.length;
+
     for(var idx = 0; idx < len; idx++){
       // from: {line, ch}, to: {line, ch}
       var range  = array[idx].range;
       var from   = {'line': range.from.line, 'ch': range.from.col};
       var to     = {'line': range.to.line, 'ch': range.to.col};
-      var select = getBetween(editor.getDoc(), from, to);
-      if(select){
-        var markedDoc = new Editor.Doc(before, 'text/x-java');
-        var marked    = getBetween(markedDoc, from, to);
+      var expected  = array[idx].marked;
+      var select    = getBetween(editor.getDoc(), from, to);
+      if(select && select.length > 0){
         var current   = select.join("\n");
-        var expected  = marked.join("\n");
         var similar   = diceCoefficient(expected, current);
-        if(similar > 0.8){
+        if(similar == 1){
           newNotes.addNote(array[idx])
+        } else {
+          rebuildNote(value, expected, array[idx], newNotes);
         }
+      } else {
+        rebuildNote(value, expected, array[idx], newNotes);
       }
     }
 

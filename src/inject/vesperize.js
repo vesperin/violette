@@ -70,8 +70,8 @@ var Vesperize = (function ($, store) {
       that.staging.hide();
       that.codemirror.setOption("readOnly", false);
 
-      deleteButtonHandler(v, v.namespace + '-' + 'close');
-      deleteButtonHandler(v, v.namespace + '-' + 'next');
+      deleteButtonHandler(that, that.namespace + '-' + 'close');
+      deleteButtonHandler(that, that.namespace + '-' + 'next');
 
       that.enableButtons();
       that.codemirror.setSelection({'line':0, 'ch':0});
@@ -214,8 +214,8 @@ var Vesperize = (function ($, store) {
 
       that.staging.hide();
 
-      deleteButtonHandler(v, v.namespace + '-' + 'close');
-      deleteButtonHandler(v, v.namespace + '-' + 'next');
+      deleteButtonHandler(that, that.namespace + '-' + 'close');
+      deleteButtonHandler(that, that.namespace + '-' + 'next');
 
       that.codemirror.setOption("readOnly", false);
       that.enableButtons();
@@ -647,7 +647,7 @@ var Vesperize = (function ($, store) {
       that.codemirror.setOption("readOnly", false);
       that.buffers = null;
 
-      deleteButtonHandler(that, v.namespace + '-' + 'close');
+      deleteButtonHandler(that, that.namespace + '-' + 'close');
 
       expandEverything(that.codemirror);
 
@@ -687,6 +687,7 @@ var Vesperize = (function ($, store) {
       }
       v.lastaction = reply.draft.cause;
       codemirror.setValue(draft.content);
+      updateLineInfo(v);
     } else {
       if (reply.info) {
         //noinspection JSUnresolvedVariable
@@ -918,7 +919,7 @@ var Vesperize = (function ($, store) {
                  var selection = other.getSelection();
                  selection     = "" === selection ? content : selection;
                  var location  = Utils.selectionLocation(other, content, selection);
-                 var note = Notes.buildNote(description, location);
+                 var note = Notes.buildNote(description, location, Notes.chunkContent(content, location));
                  v.notes.addNote(note);
                  console.log(v.notes.size());
               });
@@ -1477,6 +1478,7 @@ var Vesperize = (function ($, store) {
 
     // save notes
     key = this.primaryKey + 'notes';
+    this.notes = Notes.transfer(this, this.notes);
     var notes = this.notes.toJSON();
     var localNotes = store.get(key);
 
