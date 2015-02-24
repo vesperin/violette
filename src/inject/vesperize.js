@@ -36,29 +36,12 @@ var Vesperize = (function ($, store) {
     delete v.callback[handlerIndex];
   }
 
-  // todo(Huascar) find code sections that can be moved to Html
   function creatingNotesSection(v){
     v.disableButtons();
     notifyContent('info', v, 'Entering notes view');
 
-    v.staging.removeClass('violette-history');
-    v.staging.attr('class', 'violette-multistage');
-    v.staging.css({
-      'height': '25px'
-    });
+    v.staging = Html.buildNoteSection(v);
 
-    var left  = Html.buildHtml('span', {'class': 'tabnav-left'}, {});
-
-    v.displayer = Html.buildHtml('span', '', {'class': 'note'});
-    left.append(v.displayer);
-
-    var right = Html.buildHtml('span', {'class': 'tabnav-right'}, {});
-    right.append(Html.buildNextButton(v));
-    right.append(Html.buildHtml('span', {'class':'break'}, {}));
-    right.append(Html.buildClosingButton(v));
-
-    v.staging.append(left);
-    v.staging.append(right);
     v.handler.push(v.namespace + '-' + 'close');
     v.callback.push(function(that){
 
@@ -78,9 +61,8 @@ var Vesperize = (function ($, store) {
 
       that.displayer = null;
     });
+
     v.handler.push(v.namespace + '-' + 'next');
-
-
     v.callback.push(Notes.nextNote);
 
     v.staging.show();
@@ -90,7 +72,7 @@ var Vesperize = (function ($, store) {
   }
 
   // todo(Huascar) find code sections that can be moved to Html
-  function buildNotesSection(v, container){
+  function addsNotesSection(v, container){
 
     var left  = Html.buildHtml('span', {'class': 'tabnav-left'}, {});
 
@@ -129,7 +111,7 @@ var Vesperize = (function ($, store) {
       'class': 'btn-toolbar'
     }, {});
 
-    top = buildNotesSection(v, top);
+    top = addsNotesSection(v, top);
 
     var left  = Html.buildHtml('span', {'class': 'tabnav-left'}, {});
     var right = Html.buildHtml('span', {'class': 'tabnav-right'}, {});
@@ -140,16 +122,9 @@ var Vesperize = (function ($, store) {
     });
 
 
-    // todo(Huascar) implement drafts tracking
     var that = v;
     that.codemirror.setOption("readOnly", true);
     function setValue(value, handleElement, slider){
-      // 1. take the value and use it as the index for this.drafts[value]
-      //    to get some data and access it to get the name of the draft
-      // 2. this name will be text to be inserted into the tip html element.
-      // 3. use the select buffer thing to swap documents as the slider
-      //    handle is dragged left or right
-      // 4. WHen exiting, then put the original document back in place
       var idx       = parseInt(value);
       var available = that.drafts.contains(idx);
       console.log(available);

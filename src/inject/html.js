@@ -214,6 +214,30 @@ var Html = (function ($, module) {
   }
 
 
+  function buildNoteSection(v){
+    v.staging.removeClass('violette-history');
+    v.staging.attr('class', 'violette-multistage');
+    v.staging.css({
+      'height': '25px'
+    });
+
+    var left  = Html.buildHtml('span', {'class': 'tabnav-left'}, {});
+
+    v.displayer = Html.buildHtml('span', '', {'class': 'note'});
+    left.append(v.displayer);
+
+    var right = Html.buildHtml('span', {'class': 'tabnav-right'}, {});
+    right.append(Html.buildNextButton(v));
+    right.append(Html.buildHtml('span', {'class':'break'}, {}));
+    right.append(Html.buildClosingButton(v));
+
+    v.staging.append(left);
+    v.staging.append(right);
+
+    return v.staging;
+  }
+
+
   /**
    * Creates Vesperize's thin header.
    *
@@ -366,6 +390,7 @@ var Html = (function ($, module) {
 
   module.buildNextButton    = buildNextButton;
   module.buildClosingButton = buildClosingButton;
+  module.buildNoteSection   = buildNoteSection;
 
 
   return module;
