@@ -687,6 +687,7 @@ var Vesperize = (function ($, store) {
       }
       v.lastaction = reply.draft.cause;
       codemirror.setValue(draft.content);
+      updateLineInfo(v);
     } else {
       if (reply.info) {
         //noinspection JSUnresolvedVariable
@@ -918,7 +919,7 @@ var Vesperize = (function ($, store) {
                  var selection = other.getSelection();
                  selection     = "" === selection ? content : selection;
                  var location  = Utils.selectionLocation(other, content, selection);
-                 var note = Notes.buildNote(description, location);
+                 var note = Notes.buildNote(description, location, Notes.chunkContent(content, location));
                  v.notes.addNote(note);
                  console.log(v.notes.size());
               });
@@ -1477,6 +1478,7 @@ var Vesperize = (function ($, store) {
 
     // save notes
     key = this.primaryKey + 'notes';
+    this.notes = Notes.transfer(this, this.notes);
     var notes = this.notes.toJSON();
     var localNotes = store.get(key);
 
