@@ -30,11 +30,6 @@ var Vesperize = (function ($, store) {
     return this;
   }
 
-  function deleteButtonHandler(v, name){
-    var handlerIndex = v.handler.indexOf(name);
-    delete v.handler[handlerIndex];
-    delete v.callback[handlerIndex];
-  }
 
   function creatingNotesSection(v){
     v.disableButtons();
@@ -53,8 +48,8 @@ var Vesperize = (function ($, store) {
       that.staging.hide();
       that.codemirror.setOption("readOnly", false);
 
-      deleteButtonHandler(that, that.namespace + '-' + 'close');
-      deleteButtonHandler(that, that.namespace + '-' + 'next');
+      Utils.deleteButtonHandler(that, that.namespace + '-' + 'close');
+      Utils.deleteButtonHandler(that, that.namespace + '-' + 'next');
 
       that.enableButtons();
       that.codemirror.setSelection({'line':0, 'ch':0});
@@ -189,8 +184,8 @@ var Vesperize = (function ($, store) {
 
       that.staging.hide();
 
-      deleteButtonHandler(that, that.namespace + '-' + 'close');
-      deleteButtonHandler(that, that.namespace + '-' + 'next');
+      Utils.deleteButtonHandler(that, that.namespace + '-' + 'close');
+      Utils.deleteButtonHandler(that, that.namespace + '-' + 'next');
 
       that.codemirror.setOption("readOnly", false);
       that.enableButtons();
@@ -622,7 +617,7 @@ var Vesperize = (function ($, store) {
       that.codemirror.setOption("readOnly", false);
       that.buffers = null;
 
-      deleteButtonHandler(that, that.namespace + '-' + 'close');
+      Utils.deleteButtonHandler(that, that.namespace + '-' + 'close');
 
       expandEverything(that.codemirror);
 

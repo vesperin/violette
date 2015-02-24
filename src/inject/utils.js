@@ -4,6 +4,11 @@
 var Utils = (function ($, module) {
   "use strict";
 
+  function deleteButtonHandler(v, name){
+    var handlerIndex = v.handler.indexOf(name);
+    delete v.handler[handlerIndex];
+    delete v.callback[handlerIndex];
+  }
 
   function contains(array, target){
     var i = array.length;
@@ -357,6 +362,7 @@ var Utils = (function ($, module) {
   module.count      = countSloc;
   module.getContent = getContent;
   module.contains   = contains;
+  module.deleteButtonHandler  = deleteButtonHandler;
 
   return module;
 
