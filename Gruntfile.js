@@ -14,6 +14,7 @@ module.exports = function(grunt) {
           , 'src/inject/notes.js'
           , 'src/inject/html.js'
           , 'src/inject/stopwatch.js'
+          , 'src/inject/document.js'
           , 'src/inject/restfulcalls.js'
           , 'src/inject/refactorings.js'
           , 'src/inject/heuristics.js'

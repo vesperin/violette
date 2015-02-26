@@ -411,10 +411,11 @@ var Vesperize = (function ($, store) {
   }
 
   function persistContent(v, content){
-    // todo(Huascar) collapse into one if consisting of many `and` statements
     if(v.buffers == null && v.history == null && v.displayer == null){
-      v.persist(content);
-      v.status.text('SAVED ');
+      if(v.document == null){
+        v.persist(content);
+        v.status.text('SAVED ');
+      }
     }
   }
 
@@ -1018,7 +1019,7 @@ var Vesperize = (function ($, store) {
         , title: 'Document curated example.'
         , label: 'DOCUMENT'
         , callback: function (v/*Vesperize*/) {
-
+          v.document = new Document(v);
         }
       }
     ]
@@ -1052,9 +1053,9 @@ var Vesperize = (function ($, store) {
     this.sloc       = null;
     this.staging    = null;
 
-    // history
+    // history (edit tracker)
     this.drafts     = new Drafts(this.primaryKey);
-    this.history    = null; // edit tracker
+    this.history    = null;
     this.lastaction = null;
 
     // notes
@@ -1071,6 +1072,14 @@ var Vesperize = (function ($, store) {
     this.buffers        = null; // store button LIVE stages
     this.indexes        = [];
 
+    // todo(Huascar) persist this information
+    // documentation mode
+    this.description = 'Java: *scratched* code snippet';
+    this.tags        = [];
+    this.confidence  = 5;
+    this.document    = null;
+
+    // notifications on the side
     this.parent     = this.element.parent('div.post-text');
     this.context    = {
       "dir1": "down",

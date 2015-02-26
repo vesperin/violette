@@ -10,6 +10,10 @@ var Utils = (function ($, module) {
     delete v.callback[handlerIndex];
   }
 
+  function isStringEmpty(text){
+    return text == null || text.length == 0;
+  }
+
   function contains(array, target){
     var i = array.length;
     while (i--) {
@@ -195,6 +199,25 @@ var Utils = (function ($, module) {
   }
 
   /**
+   * Creates the range of text to select and selects it
+   */
+  module.selectText = function(element) {
+    var range, selection;
+
+    if (document.body.createTextRange) {
+      range = document.body.createTextRange();
+      range.moveToElementText(element);
+      range.select();
+    } else if (window.getSelection) {
+      selection = window.getSelection();
+      range = document.createRange();
+      range.selectNodeContents(element);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  };
+
+  /**
    * Creates a location object (range of a selection)
    *
    * @param contents code example content
@@ -362,7 +385,9 @@ var Utils = (function ($, module) {
   module.count      = countSloc;
   module.getContent = getContent;
   module.contains   = contains;
+
   module.deleteButtonHandler  = deleteButtonHandler;
+  module.isStringEmpty        = isStringEmpty;
 
   return module;
 
