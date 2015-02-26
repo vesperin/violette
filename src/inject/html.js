@@ -469,10 +469,10 @@ var Html = (function ($, module) {
 
 
     // 2
-    var tags = Html.buildHtml('div', d.getTags().join(","), {
+    var tags = Html.buildHtml('div', {
       'class': 'tagging'
       , 'data-tags-input-name': 'taggone'
-    });
+    }, {});
 
     // 3
     var helpText  = 'Press Enter, Comma or Spacebar to create a new tag, ' +
@@ -505,6 +505,7 @@ var Html = (function ($, module) {
 
     // provide our own options to the tagging plugin
     tags.tagging(d.options.tagging);
+    tags.tagging( "add", d.getTags());
 
     return container;
   }
