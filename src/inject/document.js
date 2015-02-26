@@ -290,7 +290,7 @@ var Document = (function ($, hljs) {
 
     var buttonToolbar = Html.buildHtml('div', {
       'class': 'btn-toolbar',
-      'style':'margin-top:12px;'
+      'style':'margin-top:12px;margin-left: 8px;'
     }, {});
 
     var actions = options.actions;
@@ -330,6 +330,13 @@ var Document = (function ($, hljs) {
       buttonToolbar.append(group);
     }
 
+    var classnameText = Matcher.matchClassName(v.codemirror.getValue(), "Scratched") + '.java' ;
+
+    var classnameHtml = Html.buildHtml('h1', classnameText, {
+      'style': 'margin-top: 10px;margin-bottom: -2px;margin-left: 15px;font-family:"futura-pt",Helvetica,Arial,sans-serif;text-rendering:optimizeLegibility;'
+    });
+
+    container.append(classnameHtml);
     container.append(buttonToolbar);
 
     return container;
