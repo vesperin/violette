@@ -380,6 +380,10 @@ var Html = (function ($, module) {
       , 'contenteditable': true
     }, {});
 
+    if(Utils.isStringEmpty(composer.text()) || composer.text().length > 80){
+      container.saveButton.attr('disabled', 'disabled');
+    }
+
     var fieldSet  = Html.buildHtml('fieldset', {'class': 'tabnav-right'}, {});
     var charCount = Html.buildHtml('span', {'id': Utils.brand('char-count'),'class': 'char-count'}, {});
     var inputObj  = module.buildHtml('div', {}, {});
@@ -434,8 +438,10 @@ var Html = (function ($, module) {
 
       if(tweetCount >= 80 || tweetCount <= 11/*min-max text range*/){
         inputObj.attr('disabled', 'disabled');
+        container.saveButton.attr('disabled', 'disabled');
       } else {
         inputObj.removeAttr('disabled');
+        container.saveButton.removeAttr('disabled');
       }
     });
 

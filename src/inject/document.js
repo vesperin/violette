@@ -164,6 +164,12 @@ var Document = (function ($, hljs) {
 
     v.document.container.children().hide();
     v.document.container.children().remove();
+    // since codeElement is not a direct child of container
+    // then we must hide, remove, and null it.
+    v.document.container.codeElement.hide();
+    v.document.container.codeElement.remove();
+    v.document.container.codeElement = null;
+    v.document.container.saveButton  = null;
     v.document.container.hide();
     v.document.container.remove();
     v.document.container = null;
@@ -322,6 +328,10 @@ var Document = (function ($, hljs) {
           theme: 'tooltip-custom-theme'
         }
       );
+
+      if(label === 'Save'){
+        container.saveButton = buttonHtml;
+      }
 
       v.handler.push(handler);
       v.callback.push(cb);
