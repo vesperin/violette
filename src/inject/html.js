@@ -266,8 +266,8 @@ var Html = (function ($, module) {
     });
 
     var q = Html.buildHtml('label', heading, {});
-    var qHelpText  = 'Rating values displayed on the bars. 1 is for ' +
-      'no confident at all and 5 is for totally confident. Click on a bar to vote.';
+    var qHelpText  = 'Click on a bar to vote. Bar 1 is for ' +
+      'no confident at all and bar 5 is for totally confident.';
     var qHelp = Html.buildHtml('p', qHelpText, {
       'class': 'help-block'
       , 'style': 'font-weight: normal;'
