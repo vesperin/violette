@@ -580,6 +580,8 @@ var Vesperize = (function ($, store) {
    * @param v Violette object.
    */
   function multiStageCode(v/*Violette*/) {
+    v.staging.removeClass('violette-history');
+    v.staging.attr('class', 'violette-history');
 
     v.disableButtons();
     notifyContent('info', v, 'Entering multistage view');

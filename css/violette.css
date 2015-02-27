@@ -20,13 +20,15 @@
 
 .violette-multistage {
     margin: 0;
-    height: 25px;
+    min-height: 25px;
+    height: auto;
     border-bottom: 1px dashed #ddd;
 }
 
 .violette-history {
     margin: 0;
-    height: 50px;
+    min-height: 50px;
+    height: auto;
     border-bottom: 1px dashed #ddd;
 }
 
