@@ -287,7 +287,7 @@ var Html = (function ($, module) {
       showValues:true,
       showSelectedRating:false,
       onSelect:function(value, text) {
-        console.log("rating set!! =>" + value);
+        Logger.info("New rating set (value=" + value + "; text=" + text + ")");
         bigD.setConfidence(parseInt(value));
       }
     });

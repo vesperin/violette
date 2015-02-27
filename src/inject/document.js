@@ -272,11 +272,11 @@ var Document = (function ($, hljs) {
       elapsedtime
     );
 
-    console.log("Elapsed time=> " + elapsedtime);
+    Logger.info("Elapsed time=> " + elapsedtime);
     var that = v;
     Refactoring.saveCodeSnippet(source, function(reply){
       if(typeof reply.failure !== 'undefined'){
-        console.log("ERROR: " + reply.failure.message);
+        Logger.error("ERROR: " + reply.failure.message);
       }
 
       if(reply.info){
@@ -447,7 +447,7 @@ var Document = (function ($, hljs) {
 
   Document.prototype.setTags = function(array){
     if(array){
-      console.log("TAGS has been updated");
+      Logger.info("TAGS has been updated");
       this.vault[this.owner].tags = array;
     }
   };

@@ -308,7 +308,7 @@ var Utils = (function ($, module) {
 
         location = module.createLocation(content, offsetStart, offsetEnd);
 
-        console.log(offsetStart + " - " + offsetEnd);
+        Logger.debug("Selection Range(" + offsetStart + " - " + offsetEnd + ")");
 
         break;
       } else {
