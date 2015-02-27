@@ -6,8 +6,11 @@ var Utils = (function ($, module) {
 
   function deleteButtonHandler(v, name){
     var handlerIndex = v.handler.indexOf(name);
-    delete v.handler[handlerIndex];
-    delete v.callback[handlerIndex];
+    if(handlerIndex > -1){
+      delete v.handler[handlerIndex];
+      delete v.callback[handlerIndex];
+      v.log.debug(name + " handler was deleted");
+    }
   }
 
   function isStringEmpty(text){
@@ -307,8 +310,6 @@ var Utils = (function ($, module) {
         var offsetEnd = offsetStart + selection.length;
 
         location = module.createLocation(content, offsetStart, offsetEnd);
-
-        Logger.debug("Selection Range(" + offsetStart + " - " + offsetEnd + ")");
 
         break;
       } else {

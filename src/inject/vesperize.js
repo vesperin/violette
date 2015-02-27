@@ -24,7 +24,6 @@ var Vesperize = (function ($, store) {
 
 
   function markNewDraft(v, value){
-
     Drafts.mark(v, value, notifyContent);
 
     return this;
@@ -63,12 +62,6 @@ var Vesperize = (function ($, store) {
 
       Utils.deleteButtonHandler(that, that.namespace + '-' + 'close');
       Utils.deleteButtonHandler(that, that.namespace + '-' + 'next');
-
-      Logger.debug(
-        "Vesperize#creatingNotesSection. Clean note's online handlers ("
-        + that.handler.indexOf(that.namespace + '-' + 'close') === -1
-        + ")"
-      );
 
       that.enableButtons();
       that.codemirror.setSelection({'line':0, 'ch':0});
@@ -146,7 +139,7 @@ var Vesperize = (function ($, store) {
       var idx       = parseInt(value);
       var available = that.drafts.contains(idx);
       if(!available){
-        Logger.error("Error(replayHistory). Reason: trying to access a non-existent draft.");
+        that.log.warn("Vesperize#replayHistory. Reason: trying to access a non-existent draft.");
         return;
       }
       var draft     = that.drafts.getDraft(idx);
@@ -214,12 +207,6 @@ var Vesperize = (function ($, store) {
 
       Utils.deleteButtonHandler(that, that.namespace + '-' + 'close');
       Utils.deleteButtonHandler(that, that.namespace + '-' + 'next');
-
-      Logger.debug(
-        "Vesperize#replayingHistory. Clean history's online handlers ("
-        + that.handler.indexOf(that.namespace + '-' + 'close') === -1
-        + ")"
-      );
 
       that.codemirror.setOption("readOnly", false);
       that.enableButtons();
@@ -437,7 +424,7 @@ var Vesperize = (function ($, store) {
     var clsName = Matcher.matchClassName(content, defaultClassname) + '.java';
     // extra step to make sure verify functionality gets a good class name
     if (clsName !== className) {
-      Logger.debug("Vesperize#compareAndSetClassName. Updated classname (from=" + e.classname + ", to=" + clsName + ")");
+      e.log.debug("Vesperize#compareAndSetClassName. Updated classname (from=" + e.classname + ", to=" + clsName + ")");
       e.classname = clsName;
       return clsName;
     } else {
@@ -467,11 +454,11 @@ var Vesperize = (function ($, store) {
         if(broken){
 
           if(ignoreResolveElementWarning(reply.warnings)) {
-            Logger.info("Vesperize#inspectCodeExample. Ignoring `cannot resolve` errors. ");
+            that.log.info("Vesperize#inspectCodeExample. Ignoring `cannot resolve` errors. ");
             return;
           }
 
-          Logger.debug(
+          that.log.debug(
             "Vesperize#inspectCodeExample. Code example " +
             (broken ? "contains" : "doesn't contain") +
             " compiler errors."
@@ -680,12 +667,6 @@ var Vesperize = (function ($, store) {
 
       Utils.deleteButtonHandler(that, that.namespace + '-' + 'close');
 
-      Logger.debug(
-        "Vesperize#multiStagecode. Clean multi-stage's online handlers ("
-        + that.handler.indexOf(that.namespace + '-' + 'close') === -1
-        + ")"
-      );
-
       expandEverything(that.codemirror);
 
       for(var idx = 0; idx < that.indexes.length; idx++){
@@ -728,12 +709,12 @@ var Vesperize = (function ($, store) {
     } else {
       if (reply.info) {
         //noinspection JSUnresolvedVariable
-        Logger.debug(reply.info.messages.join('\n'));
+        v.log.debug(reply.info.messages.join('\n'));
         notifyContent('info', v, reply.info.messages.join('\n'));
         codemirror.focus();
       } else if (reply.warnings) {
         if (silent) {
-          Logger.info(reply.warnings.join('\n'));
+          v.log.info(reply.warnings.join('\n'));
         } else {
           if (!v.editor.hasClass('broken')) {
             // this class will be removed
@@ -762,7 +743,7 @@ var Vesperize = (function ($, store) {
             : reply.failure.message
         );
 
-        Logger.error("Error(Kiwi). Reason: " + error);
+        v.log.error("Kiwi misbehaved: " + error);
         notifyContent('error', v, error);
       }
     }
@@ -816,7 +797,7 @@ var Vesperize = (function ($, store) {
               Refactoring.format(v.classname, content, function (reply) {
                 handleReply(v, reply);
                 v.lastaction = 'Delete comment';
-                Logger.info("Vesperize#delete. Deleting code section containing a comment. No Preprocessing required.");
+                v.log.info("Vesperize#delete. Deleting code section containing a comment. No Preprocessing required.");
               });
 
             } else {
@@ -827,7 +808,7 @@ var Vesperize = (function ($, store) {
                   var preprocess = requiresPreprocessing(reply);
                   Refactoring.deleteSelection(
                     v.classname, content, range, preprocess, function (reply) {
-                      Logger.info("Vesperize#delete. Deleting a code section. Preprocessing detected (" + preprocess + ").");
+                      v.log.info("Vesperize#delete. Deleting a code section. Preprocessing detected (" + preprocess + ").");
                       handleReply(v, reply);
                     }
                   );
@@ -868,7 +849,7 @@ var Vesperize = (function ($, store) {
                   var preprocess = requiresPreprocessing(reply);
                   Refactoring.clipSelectedBlock(v.classname, content, range,
                     preprocess, function (reply) {
-                      Logger.info("Vesperize#clip. Clipping a code section. Preprocessing detected (" + preprocess + ").");
+                      v.log.info("Vesperize#clip. Clipping a code section. Preprocessing detected (" + preprocess + ").");
                       handleReply(v, reply);
                     }
                   );
@@ -896,7 +877,7 @@ var Vesperize = (function ($, store) {
             function (reply) {
               var preprocess = requiresPreprocessing(reply);
               Refactoring.fullCleanup(v.classname, content, preprocess, function (reply) {
-                Logger.info("Vesperize#cleanup. Cleaning code example. Preprocessing detected (" + preprocess + ").");
+                v.log.info("Vesperize#cleanup. Cleaning code example. Preprocessing detected (" + preprocess + ").");
                 handleReply(v, reply);
               });
             }
@@ -934,7 +915,7 @@ var Vesperize = (function ($, store) {
                     var preprocess = requiresPreprocessing(reply);
                     Refactoring.renameSelectedMember(v.classname, description,
                       content, range, preprocess, function (reply) {
-                        Logger.info("Vesperize#rename. Renaming a selected class member. Preprocessing detected (" + preprocess + ").");
+                        v.log.info("Vesperize#rename. Renaming a selected class member. Preprocessing detected (" + preprocess + ").");
                         handleReply(v, reply);
                     });
                   }
@@ -964,7 +945,7 @@ var Vesperize = (function ($, store) {
                  var location  = Utils.selectionLocation(other, content, selection);
                  var note = Notes.buildNote(description, location, Notes.chunkContent(content, location));
                  v.notes.addNote(note);
-                 Logger.info("Vesperize#annotate. Annotating a selected code section. Notes size (" + v.notes.size() + ").");
+                 v.log.info("Vesperize#annotate. Annotating a selected code section. Notes size (" + v.notes.size() + ").");
               });
 
           });
@@ -996,7 +977,7 @@ var Vesperize = (function ($, store) {
               var preprocess = requiresPreprocessing(reply);
               Refactoring.multistageCode(
                 v.classname, content, preprocess, function (reply) {
-                  Logger.info("Vesperize#stage. Multistaging the code example.");
+                  v.log.info("Vesperize#stage. Multistaging the code example.");
                   handleReply(v, reply);
                 }
               );
@@ -1018,9 +999,10 @@ var Vesperize = (function ($, store) {
           }
 
           if(!v.drafts.empty()){
-            Logger.info("Vesperize#history. Replaying history. Drafts (" + v.drafts.size() + ")");
+            v.log.info("Vesperize#history. Replaying history. Drafts (" + v.drafts.size() + ")");
             replayHistory(v);
           } else {
+            v.log.warn("Vesperize#history. You have no marked drafts.");
             notifyContent('notice', v, 'You have no marked drafts');
           }
         }
@@ -1031,9 +1013,10 @@ var Vesperize = (function ($, store) {
         , 'label': 'Notes'
         , callback: function(v){
            if(v.notes.size() > 0 ){
-             Logger.info("Vesperize#notes. Launching notes. Notes (" + v.notes.size() + ")");
+             v.log.info("Vesperize#notes. Launching notes. Notes (" + v.notes.size() + ")");
              creatingNotesSection(v);
            } else {
+             v.log.warn("Vesperize#notes. You have no notes.");
              notifyContent('notice', v, 'You have not annotated anything');
            }
            v.codemirror.focus();
@@ -1079,9 +1062,20 @@ var Vesperize = (function ($, store) {
                  if(reply.info){
                    that.tinyUrl     = reply.info.messages[1];
                    that.exampleId   = reply.info.messages[2];
-                   Logger.info("Vesperize#share. Sharing + saving code example. Example ID (" + that.exampleId + ")");
+                   that.log.info("Vesperize#share. Sharing + saving code example. Example ID (" + that.exampleId + ")");
                    shareDialog(that, "Anyone with this link can see your fantastic work", that.tinyUrl);
                  } else {
+
+                   var foundWarnings = ((typeof(reply.warnings) !== 'undefined' && reply.warnings.length > 0));
+                   var foundFailures = ((typeof(reply.failure) !== 'undefined'));
+                   var reason = (foundWarnings
+                     ? (': ' + reply.warnings.join(','))
+                     : (foundFailures ? (': ' + reply.failure.message) : '')
+                   );
+
+                   reason = reason + '.';
+
+                   that.log.error("Vesperize#share. Unable to save your code example" + reason);
                    notifyContent('error', that, "Unable to save your code example")
                  }
                });
@@ -1095,7 +1089,7 @@ var Vesperize = (function ($, store) {
         , title: 'Document curated example.'
         , label: 'DOCUMENT'
         , callback: function (v/*Vesperize*/) {
-          Logger.info("Vesperize#document. Launching documentation mode.");
+          v.log.info("Vesperize#document. Launching documentation mode.");
           v.document = new Document(v);
         }
       }
@@ -1134,6 +1128,9 @@ var Vesperize = (function ($, store) {
     this.drafts     = new Drafts(this.primaryKey);
     this.history    = null;
     this.lastaction = null;
+
+    // logging
+    this.log        = Logger.getLogger(this.primaryKey);
 
     // notes
     this.notes      = new Notes(this.primaryKey);
@@ -1197,8 +1194,7 @@ var Vesperize = (function ($, store) {
       ]
     };
 
-    Logger.useDefaults();
-    Logger.info("Initializing Violette (" + this.primaryKey + ")");
+    this.log.info("Initializing Violette (" + this.primaryKey + ")");
 
     this.init();
 
@@ -1270,12 +1266,12 @@ var Vesperize = (function ($, store) {
           matchBrackets: true,
           extraKeys: {
             "Ctrl-Q": function (cm) {
-              Logger.info("Pressing Ctrl-Q to force folding of code block.");
+              that.log.info("Pressing Ctrl-Q to force folding of code block.");
               //noinspection JSUnresolvedFunction
               cm.foldCode(cm.getCursor());
             }
             , "Ctrl-S": function(cm){
-              Logger.info("Pressing Ctrl-S to force saving example and marking a draft.");
+              that.log.info("Pressing Ctrl-S to force saving example and marking a draft.");
               markNewDraft(that, cm.getValue());
               persistContent(that, cm.getValue());
               inspectCodeExample(that, cm.getValue());

@@ -91,6 +91,7 @@ var Document = (function ($, hljs) {
         , label: 'Edit'
         , icon: 'octicon octicon-sign-in'
         , callback: function(v){
+          v.log.info('Exiting documentation mode');
           // go back to scratchspace
           editCodeSnippet(v);
         }
@@ -108,7 +109,7 @@ var Document = (function ($, hljs) {
           // maybe I should send a ``broken'' flag in the source which indicates
           // the code example is broken containing the value returned by
           // Refactoring.detectPartialSnippet() method.
-
+          v.log.info('Saving code example.');
           saveCodeExample(v);
         }
       }
@@ -272,11 +273,11 @@ var Document = (function ($, hljs) {
       elapsedtime
     );
 
-    Logger.info("Elapsed time=> " + elapsedtime);
+    doc.log.info("Time spent curating example: " + elapsedtime);
     var that = v;
     Refactoring.saveCodeSnippet(source, function(reply){
       if(typeof reply.failure !== 'undefined'){
-        Logger.error("ERROR: " + reply.failure.message);
+        doc.log.error("Document#saveCodeExample. " + reply.failure.message);
       }
 
       if(reply.info){
@@ -286,6 +287,7 @@ var Document = (function ($, hljs) {
 
       }
 
+      doc.log.info("Exiting documentation mode after saving code example.");
       editCodeSnippet(that);
     });
 
@@ -392,6 +394,8 @@ var Document = (function ($, hljs) {
     this.vault              = {};
     this.vault[this.owner]  = {};
 
+    this.log                = v.log;
+
 
     // bookkeeping
     this.vault[this.owner].editor       = v.editor;
@@ -411,6 +415,7 @@ var Document = (function ($, hljs) {
     v.editor.removeClass('violette-editor');
     v.editor.addClass('violette-document');
 
+    this.log.info("Entering into documentation mode");
     this.init(v);
   };
 
@@ -447,7 +452,7 @@ var Document = (function ($, hljs) {
 
   Document.prototype.setTags = function(array){
     if(array){
-      Logger.info("TAGS has been updated");
+      this.log.info("TAGS has been updated");
       this.vault[this.owner].tags = array;
     }
   };
