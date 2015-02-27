@@ -32,6 +32,14 @@ var Vesperize = (function ($, store) {
 
 
   function creatingNotesSection(v){
+    if(v.staging.hasClass('violette-history')){
+      v.staging.removeClass('violette-history');
+      v.staging.addClass('violette-multistage');
+    } else {
+      v.staging.addClass('btn-toolbar');
+    }
+
+
     v.disableButtons();
     notifyContent('info', v, 'Entering notes view');
 
@@ -97,11 +105,15 @@ var Vesperize = (function ($, store) {
   // todo(Huascar) find code sections that can be moved to Html
   function replayHistory(v){
 
+    if(v.staging.hasClass('violette-multistage')){
+      v.staging.removeClass('violette-multistage');
+      v.staging.addClass('violette-history btn-toolbar');
+    }
+
+
     v.disableButtons();
     notifyContent('info', v, 'Entering history view');
 
-    v.staging.removeClass('violette-multistage');
-    v.staging.attr('class', 'violette-history');
 
     var top     = Html.buildHtml('div', {
       'class': 'btn-toolbar'
@@ -447,6 +459,11 @@ var Vesperize = (function ($, store) {
         var broken = containsSyntaxErrors(reply);
         if(broken){
 
+          if(ignoreResolveElementWarning(reply.warnings)) {
+            Logger.info("Vesperize#inspectCodeExample. Ignoring `cannot resolve` errors. ");
+            return;
+          }
+
           Logger.debug(
             "Vesperize#inspectCodeExample. Code example " +
             (broken ? "contains" : "doesn't contain") +
@@ -580,8 +597,15 @@ var Vesperize = (function ($, store) {
    * @param v Violette object.
    */
   function multiStageCode(v/*Violette*/) {
-    v.staging.removeClass('violette-history');
-    v.staging.attr('class', 'violette-history');
+
+    if(v.staging.hasClass('violette-history')){
+      v.staging.removeClass('violette-history');
+      v.staging.addClass('violette-multistage btn-toolbar');
+    } else {
+      v.staging.addClass('btn-toolbar');
+      v.staging.css({'height': 'auto'});
+    }
+
 
     v.disableButtons();
     notifyContent('info', v, 'Entering multistage view');
