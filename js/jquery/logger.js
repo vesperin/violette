@@ -1,4 +1,5 @@
 // https://github.com/jonbretman/logger
+// Huascar: keep it here until I find the right project to put it
 (function () {
 
   /**
