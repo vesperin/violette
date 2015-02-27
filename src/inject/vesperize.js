@@ -34,10 +34,15 @@ var Vesperize = (function ($, store) {
   function creatingNotesSection(v){
     if(v.staging.hasClass('violette-history')){
       v.staging.removeClass('violette-history');
-      v.staging.addClass('violette-multistage');
+      v.staging.addClass('violette-multistage btn-toolbar');
     } else {
-      v.staging.addClass('btn-toolbar');
+      v.staging.addClass('violette-multistage btn-toolbar');
     }
+
+    v.staging.css({
+      'min-height': '25px'
+      , 'height': 'auto'
+    });
 
 
     v.disableButtons();
@@ -156,11 +161,13 @@ var Vesperize = (function ($, store) {
         that.displayer.text("");
         that.displayer.hide();
         that.staging.css({
-          'height': '25px'
+          'min-height': '25px'
+          , 'height': 'auto'
         });
       } else {
         that.staging.css({
-          'height': '50px'
+          'min-height': '50px'
+          , 'height': 'auto'
         });
         that.displayer.show();
         Notes.nextNote(that);
@@ -602,9 +609,13 @@ var Vesperize = (function ($, store) {
       v.staging.removeClass('violette-history');
       v.staging.addClass('violette-multistage btn-toolbar');
     } else {
-      v.staging.addClass('btn-toolbar');
-      v.staging.css({'height': 'auto'});
+      v.staging.addClass('violette-multistage btn-toolbar');
     }
+
+    v.staging.css({
+      'min-height': '25px'
+      , 'height': 'auto'
+    });
 
 
     v.disableButtons();
