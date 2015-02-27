@@ -8,7 +8,8 @@ module.exports = function(grunt) {
       },
       dist: {
         src: [
-          'src/inject/utils.js'
+          'src/inject/logger.js'
+          , 'src/inject/utils.js'
           , 'src/inject/matcher.js'
           , 'src/inject/drafts.js'
           , 'src/inject/notes.js'

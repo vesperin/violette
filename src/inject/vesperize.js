@@ -1130,7 +1130,7 @@ var Vesperize = (function ($, store) {
     this.lastaction = null;
 
     // logging
-    this.log        = Logger.getLogger(this.primaryKey);
+    this.log        = new Logger(this.primaryKey);
 
     // notes
     this.notes      = new Notes(this.primaryKey);
@@ -1194,7 +1194,7 @@ var Vesperize = (function ($, store) {
       ]
     };
 
-    this.log.info("Initializing Violette (" + this.primaryKey + ")");
+    this.log.info("Initializing Violette");
 
     this.init();
 

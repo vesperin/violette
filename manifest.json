@@ -76,7 +76,7 @@
         "js/screenfull/screenfull.min.js",
         "js/jquery/idle-timer.min.js",
         "js/jquery/jquery.nouislider.all.min.js",
-        "js/jquery/logger.js",
+        "js/logentries/le.min.js",
         "js/setjs/set.js",
         "lib/violette.js"
 
