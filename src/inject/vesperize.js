@@ -1316,9 +1316,14 @@ var Vesperize = (function ($, store) {
    */
   Vesperize.prototype.bindElements = function () {
 
+    var efficientHandleClickEvent = Utils.debounce(
+      $.proxy(this.handleClickEvent, this),
+      150, false
+    );
+
     this.editor.on(
       'click', '[data-provider="violette-scratchspace"]',
-      $.proxy(this.handleClickEvent, this)
+      efficientHandleClickEvent
     );
 
     this.codemirror.on('focus', $.proxy(this.focus, this));
