@@ -958,10 +958,12 @@ var Vesperize = (function ($, store) {
         , 'label': 'Stage'
         , callback: function(v){
 
-          if(v.buffers != null && Object.keys(v.buffers).length > 0) {
+          if(v.buffers != null) {
             v.codemirror.focus();
             return;
           }
+
+          v.buffers = {}; // This will prevent multi-stage-event triggering more then once
 
           var codemirror = v.codemirror;
           var content = codemirror.getValue();
@@ -1315,15 +1317,9 @@ var Vesperize = (function ($, store) {
    * Private: bind HTML element to their respective listeners
    */
   Vesperize.prototype.bindElements = function () {
-
-    var efficientHandleClickEvent = Utils.debounce(
-      $.proxy(this.handleClickEvent, this),
-      150, false
-    );
-
     this.editor.on(
       'click', '[data-provider="violette-scratchspace"]',
-      efficientHandleClickEvent
+      $.proxy(this.handleClickEvent, this)
     );
 
     this.codemirror.on('focus', $.proxy(this.focus, this));
