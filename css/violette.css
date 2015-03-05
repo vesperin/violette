@@ -256,7 +256,7 @@ fieldset[disabled] .octicon-danger.active {
 
 .divider{
     display:inline-block;
-    width:30px;
+    width:1px;
     height:18px;
     margin:0 6px;
     vertical-align:middle;

@@ -214,6 +214,9 @@ var Vesperize = (function ($, store) {
     var left  = Html.buildHtml('span', {'class': 'tabnav-left'}, {});
 
     v.displayer = Html.buildHtml('span', '', {'class': 'note'});
+    var bookmarked = Html.buildHtml('span', '', {'class': 'octicon octicon-light-bulb'});
+    left.append(bookmarked);
+    left.append(Html.buildHtml('span', {'class':'divider'}, {}));
     left.append(v.displayer);
 
     container.append(left);
@@ -957,7 +960,7 @@ var Vesperize = (function ($, store) {
       },
       {
         name: 'clip'
-        , title: 'Clip a code selection'
+        , title: 'Clip a method'
         , icon: 'octicon octicon-clippy'
         , callback: function (v/*Violette*/) {
           var codemirror = v.codemirror;
@@ -1167,10 +1170,13 @@ var Vesperize = (function ($, store) {
       }
     ]
     , 'modes':  [
-      { name: 'options'
-        , title: 'More options'
-        , icon: 'octicon octicon-gear'
-        , callback: function (v/*Vesperize*/) {}
+      { name: 'download'
+        , title: 'Bring code example to desktop'
+        , icon: 'octicon octicon-device-desktop'
+        , label: 'Bring it to Desktop'
+        , callback: function (v/*Vesperize*/) {
+          v.codemirror.focus();
+        }
       }
     ]
     , 'social': [
@@ -1466,13 +1472,21 @@ var Vesperize = (function ($, store) {
     });
 
     this.codemirror.on('change', function(instance, change){
-      if(instance.old !== instance.getValue() && that.tinyUrl !== null){
-        notifyContent('info', that, "Saving NEW code example");
-        // If so, then the current is becoming a new code example
-        that.tinyUrl    = null;
-        that.stopwatch  = new Stopwatch();
-        instance.old    = null; // cleaning our stuff afterwards
+      // since we are setting a value when replaying history
+      // , we set the tinyUrl to null. The solution is to make sure
+      // we don't fall for this use case
+      // erase above text if test passes
+      if(that.buffers == null && that.history == null && that.displayer == null){
+        if(instance.old !== instance.getValue() && that.tinyUrl !== null){
+          notifyContent('info', that, "Saving NEW code example");
+          // If so, then the current is becoming a new code example
+          that.tinyUrl    = null;
+          that.stopwatch  = new Stopwatch();
+        }
       }
+
+      instance.old    = null; // cleaning our stuff afterwards
+
     });
 
     // makes sure that when we exit fullscreen mode

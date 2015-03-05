@@ -90,7 +90,7 @@ var Html = (function ($, module) {
 
   function buildLeftBox(v, container, actions){
     var leftBox   = module.buildHtml('span', {'class': 'tabnav-left'}, {});
-    container = buildBoxFooter(v, container, leftBox, actions);
+    container = buildBoxFooter(v, container, leftBox, actions, true);
     return container;
   }
 
@@ -100,8 +100,8 @@ var Html = (function ($, module) {
     return container;
   }
 
-  function buildBoxFooter(v, container, box, actions) {
-
+  function buildBoxFooter(v, container, box, actions, linked) {
+    linked      = linked || false;
     var len     = actions.length;
 
     for(var i = 0; i < len; i++){
@@ -118,7 +118,7 @@ var Html = (function ($, module) {
 
       var iconStr = (!hasLabel
         ? '<span class="' + icon + '"></span>'
-        : action.label
+        : '<span class="' + icon + '"></span>&nbsp;&nbsp;' + action.label
       );
 
 
@@ -126,7 +126,7 @@ var Html = (function ($, module) {
 
 
       var buttonHtml = (hasLabel
-        ? buildOcticonFooterButton(name, title, v, handler, iconStr)
+        ? buildOcticonFooterButton(name, title, v, handler, iconStr, linked)
         : buildOcticonButton(name, title, v, handler, iconStr)
       );
 
@@ -182,15 +182,50 @@ var Html = (function ($, module) {
     });
   }
 
-  function buildOcticonFooterButton(name, title, v, handler, iconStr){
+  function buildOcticonFooterButton(name, title, v, handler, iconStr, linked){
     var darkTheme = name === 'document';
-    return module.buildHtml('button', iconStr, {
+    var addon     = (linked
+      ? 'violette-button octicon-button btn-dark-link'
+      : (darkTheme
+      ? 'violette-button minibutton dark'
+      : 'violette-button minibutton'
+    )
+    );
+
+    var buttonHtml = module.buildHtml('button', iconStr, {
       'type': 'button'
-      , 'class': darkTheme ? 'violette-button minibutton dark' : 'violette-button minibutton'
+      , 'class': addon
       , 'title': title
       , 'data-provider': v.namespace
       , 'data-handler': handler
     });
+
+    if(linked){ // only for actions in the modes array
+      buttonHtml.css({
+        'font-size': '13px'
+        , 'color': '#666'
+        , 'margin-top': '2px'
+        , 'text-decoration': 'none'
+      });
+
+      buttonHtml.hover(function(){
+        buttonHtml.css({
+          'font-size': '13px'
+          , 'color': '#4183c4'
+          , 'margin-top': '2px'
+          , 'text-decoration': 'none'
+        });
+      }, function(){
+        buttonHtml.css({
+          'font-size': '13px'
+          , 'color': '#666'
+          , 'margin-top': '2px'
+          , 'text-decoration': 'none'
+        });
+      });
+    }
+
+    return buttonHtml;
   }
 
 
@@ -235,6 +270,9 @@ var Html = (function ($, module) {
     var left  = Html.buildHtml('span', {'class': 'tabnav-left'}, {});
 
     v.displayer = Html.buildHtml('span', '', {'class': 'note'});
+    var bookmarked = Html.buildHtml('span', '', {'class': 'octicon octicon-light-bulb'});
+    left.append(bookmarked);
+    left.append(Html.buildHtml('span', {'class':'divider'}, {}));
     left.append(v.displayer);
 
     var right = Html.buildHtml('span', {'class': 'tabnav-right'}, {});
@@ -615,8 +653,8 @@ var Html = (function ($, module) {
         var rangeText = ' [' + from + '-' + to + ']';
 
         var noteHtml = Html.buildHtml('blockquote', note.text, {
-           'id':Utils.brand("note")
-           , 'style': 'margin-left: 4px; margin-right: 10px;color: #2c3e50; font-size: 13px; margin-top:5px;'
+          'id':Utils.brand("note")
+          , 'style': 'margin-left: 4px; margin-right: 10px;color: #2c3e50; font-size: 13px; margin-top:5px;'
         });
 
         var userHtml  = Html.buildHtml('footer', note.username + ' annotated section ' + rangeText, {});
