@@ -195,6 +195,16 @@ var Refactoring = (function (module) {
     Calls.put(postUrl, request, null, callback);
   };
 
+  module.updateCodeSnippet = function (source, callback) {
+    var request = {
+      'update': {
+        'source': source
+      }
+    };
+
+    Calls.post(postUrl, request, null, callback);
+  };
+
   return module;
 
 }(Refactoring || {}));

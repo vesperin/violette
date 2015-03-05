@@ -258,6 +258,9 @@ var Document = (function ($, hljs) {
       ? defaultDescription
       : doc.getDescription();
 
+    // 5. process id
+    var foundId = v.exampleId !== null;
+    var id      = foundId ? v.exampleId : "new";
 
     // 5. process source
     var source = Utils.createCode(
@@ -270,26 +273,43 @@ var Document = (function ($, hljs) {
       changes,
       confidence,
       notes,
-      elapsedtime
+      elapsedtime,
+      id
     );
 
     doc.log.info("Time spent curating example: " + elapsedtime);
     var that = v;
-    Refactoring.saveCodeSnippet(source, function(reply){
-      if(typeof reply.failure !== 'undefined'){
-        doc.log.error("Document#saveCodeExample. " + reply.failure.message);
-      }
+    if(foundId){
+      Refactoring.updateCodeSnippet(source, function(reply){
+        if(typeof reply.failure !== 'undefined'){
+          doc.log.error("Document#saveCodeExample. " + reply.failure.message);
+        }
 
-      if(reply.info){
+        if(reply.info){
 
-        that.document.setExampleId(reply.info.messages[1]);
-        that.document.setTinyUrl(reply.info.messages[2]);
+          that.document.setExampleId(reply.info.messages[1]);
+        }
 
-      }
+        doc.log.info("Exiting documentation mode after updating code example.");
+        editCodeSnippet(that);
+      });
+    } else {
+      Refactoring.saveCodeSnippet(source, function(reply){
+        if(typeof reply.failure !== 'undefined'){
+          doc.log.error("Document#saveCodeExample. " + reply.failure.message);
+        }
 
-      doc.log.info("Exiting documentation mode after saving code example.");
-      editCodeSnippet(that);
-    });
+        if(reply.info){
+
+          that.document.setExampleId(reply.info.messages[1]);
+          that.document.setTinyUrl(reply.info.messages[2]);
+
+        }
+
+        doc.log.info("Exiting documentation mode after saving code example.");
+        editCodeSnippet(that);
+      });
+    }
 
   }
 

@@ -351,7 +351,7 @@ var Utils = (function ($, module) {
   module.createCode = function (name, description,
                                 content, tags, datastructures,
                                 algorithms, refactorings,
-                                confidence, comments, elapsedtime) {
+                                confidence, comments, elapsedtime, id) {
     tags = tags || [];
     datastructures = datastructures || [];
     algorithms = algorithms || [];
@@ -359,12 +359,14 @@ var Utils = (function ($, module) {
     confidence = confidence || 0;
     comments = comments || [];
     elapsedtime = elapsedtime || "";
+    id          = id || "new";
 
     var url = document.location.href;
     var birthday = Date.now();
 
     description = description || 'Java: *scratched* code snippet';
     return {
+      'id': id,
       'name': name,
       'description': description,
       'content': content,
