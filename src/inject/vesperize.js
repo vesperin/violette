@@ -180,7 +180,7 @@ var Vesperize = (function ($, store) {
 
     v.handler.push(v.namespace + '-' + 'close');
     v.callback.push(function(that){
-
+      $.scrollLock();
       notifyContent('info', that, 'Exiting notes view');
 
       that.staging.children().hide();
@@ -196,6 +196,7 @@ var Vesperize = (function ($, store) {
       that.codemirror.setSelection({'line':0, 'ch':0});
 
       that.displayer = null;
+      $.scrollLock();
     });
 
     v.handler.push(v.namespace + '-' + 'next');
@@ -326,7 +327,7 @@ var Vesperize = (function ($, store) {
 
     v.handler.push(v.namespace + '-' + 'close');
     v.callback.push(function(that){
-
+      $.scrollLock();
       notifyContent('info', that, 'Exiting history view');
 
       that.staging.children().hide();
@@ -353,6 +354,7 @@ var Vesperize = (function ($, store) {
       that.history = null;
 
       that.enableButtons();
+      $.scrollLock();
 
     });
 
@@ -1628,18 +1630,22 @@ var Vesperize = (function ($, store) {
     var key = this.primaryKey + 'eid';
     var eid = this.exampleId || null;
 
-    var localEid = store.get(key);
-    if(localEid !== eid){
-      store.set(key, eid);
-    }
+    // this covers the tinyUrl null checking since both attributes
+    // are updated together
+    if(eid !== null){
+      var localEid = store.get(key);
+      if(localEid !== eid){
+        store.set(key, eid);
+      }
 
-    // save tinyUrl
-    key = this.primaryKey + 'tinyUrl';
-    var turl = this.tinyUrl || null;
-    var localTinyUrl = store.get(key);
+      // save tinyUrl
+      key = this.primaryKey + 'tinyUrl';
+      var turl = this.tinyUrl;
+      var localTinyUrl = store.get(key);
 
-    if(localTinyUrl !== turl){
-      store.set(key, turl);
+      if(localTinyUrl !== turl){
+        store.set(key, turl);
+      }
     }
 
     // save drafts
