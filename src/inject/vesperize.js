@@ -1647,6 +1647,25 @@ var Vesperize = (function ($, store) {
 
     }
 
+    // 3. description + tags + confidence
+    var desc = store.get(this.primaryKey + 'desc');
+    if(desc){
+      this.description = desc;
+    }
+
+    var tags = store.get(this.primaryKey + 'tags');
+    if(tags){
+      this.tags = [];
+      for(var t = 0; t < tags.length; t++){
+        this.tags.push(tags[t]);
+      }
+    }
+
+    var conf = store.get(this.primaryKey + 'confidence');
+    if(conf){
+      this.confidence = parseInt(conf);
+    }
+
     return this;
   };
 
@@ -1738,6 +1757,24 @@ var Vesperize = (function ($, store) {
       store.set(key, notes);
     }
 
+    // save description + tags + confidence
+    key      = this.primaryKey + 'desc';
+    var desc = store.get(key);
+    if(store.serialize(desc) !== store.serialize(this.description)){
+      store.set(key, this.description);
+    }
+
+    key      = this.primaryKey + 'tags';
+    var tags = store.get(key);
+    if(store.serialize(tags) !== store.serialize(this.tags)){
+      store.set(key, this.tags);
+    }
+
+    key      = this.primaryKey + 'confidence';
+    var conf = store.get(key);
+    if(store.serialize(conf) !== store.serialize(this.confidence)){
+      store.set(key, this.confidence);
+    }
 
     return this;
   };
