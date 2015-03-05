@@ -1188,44 +1188,50 @@ var Vesperize = (function ($, store) {
             return '\n' + text + '\n';
           }
 
-          $.scrollLock();
-          var that = v;
-          codemirror.operation(function(){
-            var header = that.classname;
-            var url    = document.location.href;
-            var textToWrite = header +
-              placeText('from ' + url) +
-              '\n' +
-              placeText(that.description);
 
-            textToWrite     = textToWrite +
+          var other = codemirror;
+          var that  = v;
+          $.scrollLock();
+          // opens a dialog
+          openInputDialog(codemirror, Html.buildInput("Describe code").html(), "Describe example:", "", function(description){
+            other.operation(function(){
+              that.description = (Utils.isStringEmpty(description)) ? that.description : description;
+              var header = that.classname;
+              var url    = document.location.href;
+              var textToWrite = header +
+                placeText('from ' + url) +
+                '\n' +
+                placeText(that.description);
+
+              textToWrite     = textToWrite +
               '\n' + '~~~' +
               placeText(content) +
               '~~~' + '\n';
 
-            var notes = that.notes.toHashArray();
-            var len   = notes.length;
+              var notes = that.notes.toHashArray();
+              var len   = notes.length;
 
-            for(var idx = 0; idx < len; idx++){
-              var note = notes[idx];
-              if(note){
+              for(var idx = 0; idx < len; idx++){
+                var note = notes[idx];
+                if(note){
 
-                var from = parseInt(note.from.split(';')[0]) + 1;
-                var to   = parseInt(note.to.split(';')[0]) + 1;
+                  var from = parseInt(note.from.split(';')[0]) + 1;
+                  var to   = parseInt(note.to.split(';')[0]) + 1;
 
-                var rangeText = '[' + from + '-' + to + ']';
+                  var rangeText = '[' + from + '-' + to + ']';
 
-                textToWrite     = textToWrite + placeText(rangeText + ': ' + note.text);
+                  textToWrite     = textToWrite + placeText(rangeText + ': ' + note.text);
+                }
               }
-            }
 
 
-            var blob = new Blob([textToWrite], {type: "text/plain;charset=utf-8"});
-            saveAs(blob, header + '.txt');
-            $.scrollLock();
+              var blob = new Blob([textToWrite], {type: "text/plain;charset=utf-8"});
+              saveAs(blob, header + '.txt');
+              $.scrollLock();
+              other.focus();
+            });
+
           });
-
-          codemirror.focus();
         }
       }
     ]
