@@ -68,6 +68,7 @@ var Notes = (function () {
   }
 
   Notes.nextNote = function(that){
+    $.scrollLock();
     var next     = that.notes.next();
     if(!next) { return; }
     var text     = next.text;
@@ -87,6 +88,7 @@ var Notes = (function () {
     text = text.substring(0, 1).toUpperCase() + text.substring(1);
     that.displayer.text(text);
     that.codemirror.focus();
+    $.scrollLock();
   };
 
 

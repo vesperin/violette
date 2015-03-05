@@ -12,7 +12,7 @@
     "256": "img/icon256.png"
   },
   "description": "A plugin for scouring Java source code on Stackoverflow.",
-  "homepage_url": "https://github.com/chefedited/vesper-web",
+  "homepage_url": "http://huascarsanchez.com/posts/thesiswork/tools/",
   "background": {
     "scripts": [
       "js/jquery/jquery.min.js",
@@ -71,10 +71,15 @@
         "js/jquery/jquery.tooltipster.min.js",
         "js/jquery/jquery.tooltipster.min.js",
         "js/jquery/pnotify.custom.min.js",
+        "js/jquery/jquery.barrating.min.js",
+        "js/jquery/jquery.scrollLock.js",
+        "js/jquery/tagging.js",
         "js/screenfull/screenfull.min.js",
         "js/jquery/idle-timer.min.js",
         "js/jquery/jquery.nouislider.all.min.js",
+        "js/logentries/le.min.js",
         "js/setjs/set.js",
+        "js/saver/filesaver.js",
         "lib/violette.js"
 
       ]

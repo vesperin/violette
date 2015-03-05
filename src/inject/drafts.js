@@ -46,8 +46,10 @@ var Drafts = (function () {
       var a   = v.codemirror.getValue();
       v.notes = Notes.transfer(v, v.notes);
       v.drafts.newDraft(
-        'No changes', b, a, v.notes.toJSON()
+        'Origin', b, a, v.notes.toJSON()
       );
+
+      v.log.info("Creating draft ZERO (aka `NULL draft`)");
     }
 
 
@@ -75,6 +77,7 @@ var Drafts = (function () {
 
       v.lastaction = null;
 
+      v.log.info("A new draft has been marked!");
       callback('info', v, 'A new draft has been marked!');
     }
   };

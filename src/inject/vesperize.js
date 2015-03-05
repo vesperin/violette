@@ -12,6 +12,135 @@ var Vesperize = (function ($, store) {
    */
   var defaultClassname = 'Scratched';
 
+  function configuresPNotify(){
+    // must be initialize in other to use octicon icons
+    // for their alerts
+    PNotify.prototype.options.styling = "octicon";
+    PNotify.prototype.options.delay   = 4000;
+    PNotify.prototype.options.confirm = {
+      // Make a confirmation box.
+      confirm: false,
+      // Make a prompt.
+      prompt: false,
+      // Classes to add to the input element of the prompt.
+      prompt_class: "",
+      // The default value of the prompt.
+      prompt_default: "",
+      // Whether the prompt should accept multiple lines of text.
+      prompt_multi_line: false,
+      // Where to align the buttons. (right, center, left, justify)
+      align: "right",
+      buttons: [
+        {
+          text: "Ok",
+          addClass: "violette-button minibutton",
+          // Whether to trigger this button when the user hits enter in a single line prompt.
+          promptTrigger: true,
+          click: function(notice, value){
+            notice.remove();
+            notice.get().trigger("pnotify.confirm", [notice, value]);
+          }
+        }
+      ]
+    };
+
+    PNotify.prototype.modules.confirm = {
+      seen: new Set(),
+      // The div that contains the buttons.
+      container: null,
+      // The input element of a prompt.
+      prompt: null,
+
+      init: function(notice, options){
+        this.container = $('<div style="margin-top:5px;clear:both;" />')
+          .css('text-align', options.align)
+          .appendTo(notice.container);
+
+        if (options.confirm || options.prompt)
+          this.makeDialog(notice, options);
+        else
+          this.container.hide();
+      },
+
+      update: function(notice, options){
+        if (options.confirm) {
+          this.makeDialog(notice, options);
+          this.container.show();
+        } else {
+          this.container.hide().empty();
+        }
+      },
+
+      afterOpen: function(notice, options){
+        if (options.prompt)
+          this.prompt.focus();
+      },
+
+      makeDialog: function(notice, options) {
+        var already = false, that = this, btn, elem;
+        this.container.empty();
+        if (options.prompt) {
+          this.prompt = $('<'+(options.prompt_multi_line
+              ? 'textarea rows="5"'
+              : 'input type="text"')+' style="margin-bottom:5px;clear:both;" />'
+          )
+            .addClass(notice.styles.input+' '+options.prompt_class)
+            .val(options.prompt_default)
+            .appendTo(this.container);
+        }
+        for (var i in options.buttons) {
+          btn = options.buttons[i];
+          if(this.seen.has(btn.text)) continue;
+          if (already) {
+            this.container.append(' ');
+            break;
+          } else {
+            already = true;
+          }
+
+          elem = $('<button type="button" />')
+            .addClass(notice.styles.btn+' '+btn.addClass)
+            .text(btn.text)
+            .appendTo(this.container)
+            .on("click", (function(btn){ return function(){
+              if (typeof btn.click == "function") {
+                btn.click(notice, options.prompt ? that.prompt.val() : null);
+              }
+            }})(btn));
+          if (options.prompt && !options.prompt_multi_line && btn.promptTrigger)
+            this.prompt.keypress((function(elem){ return function(e){
+              if (e.keyCode == 13)
+                elem.click();
+            }})(elem));
+          if (notice.styles.text) {
+            elem.wrapInner('<span class="'+notice.styles.text+'"></span>');
+          }
+          if (notice.styles.btnhover) {
+            elem.hover((function(elem){ return function(){
+              elem.addClass(notice.styles.btnhover);
+            }})(elem), (function(elem){ return function(){
+              elem.removeClass(notice.styles.btnhover);
+            }})(elem));
+          }
+          if (notice.styles.btnactive) {
+            elem.on("mousedown", (function(elem){ return function(){
+              elem.addClass(notice.styles.btnactive);
+            }})(elem)).on("mouseup", (function(elem){ return function(){
+              elem.removeClass(notice.styles.btnactive);
+            }})(elem));
+          }
+          if (notice.styles.btnfocus) {
+            elem.on("focus", (function(elem){ return function(){
+              elem.addClass(notice.styles.btnfocus);
+            }})(elem)).on("blur", (function(elem){ return function(){
+              elem.removeClass(notice.styles.btnfocus);
+            }})(elem));
+          }
+        }
+      }
+    };
+  }
+
   function openInputDialog(editor, text, shortText, deflt, f){
     //noinspection JSUnresolvedVariable
     if (editor.openDialog) {
@@ -24,44 +153,34 @@ var Vesperize = (function ($, store) {
 
 
   function markNewDraft(v, value){
-
     Drafts.mark(v, value, notifyContent);
 
     return this;
   }
 
-  function deleteButtonHandler(v, name){
-    var handlerIndex = v.handler.indexOf(name);
-    delete v.handler[handlerIndex];
-    delete v.callback[handlerIndex];
-  }
 
-  // todo(Huascar) find code sections that can be moved to Html
   function creatingNotesSection(v){
+    if(v.staging.hasClass('violette-history')){
+      v.staging.removeClass('violette-history');
+      v.staging.addClass('violette-multistage btn-toolbar');
+    } else {
+      v.staging.addClass('violette-multistage btn-toolbar');
+    }
+
+    v.staging.css({
+      'min-height': '25px'
+      , 'height': 'auto'
+    });
+
+
     v.disableButtons();
     notifyContent('info', v, 'Entering notes view');
 
-    v.staging.removeClass('violette-history');
-    v.staging.attr('class', 'violette-multistage');
-    v.staging.css({
-      'height': '25px'
-    });
+    v.staging = Html.buildNoteSection(v);
 
-    var left  = Html.buildHtml('span', {'class': 'tabnav-left'}, {});
-
-    v.displayer = Html.buildHtml('span', '', {'class': 'note'});
-    left.append(v.displayer);
-
-    var right = Html.buildHtml('span', {'class': 'tabnav-right'}, {});
-    right.append(Html.buildNextButton(v));
-    right.append(Html.buildHtml('span', {'class':'break'}, {}));
-    right.append(Html.buildClosingButton(v));
-
-    v.staging.append(left);
-    v.staging.append(right);
     v.handler.push(v.namespace + '-' + 'close');
     v.callback.push(function(that){
-
+      $.scrollLock();
       notifyContent('info', that, 'Exiting notes view');
 
       that.staging.children().hide();
@@ -70,17 +189,17 @@ var Vesperize = (function ($, store) {
       that.staging.hide();
       that.codemirror.setOption("readOnly", false);
 
-      deleteButtonHandler(that, that.namespace + '-' + 'close');
-      deleteButtonHandler(that, that.namespace + '-' + 'next');
+      Utils.deleteButtonHandler(that, that.namespace + '-' + 'close');
+      Utils.deleteButtonHandler(that, that.namespace + '-' + 'next');
 
       that.enableButtons();
       that.codemirror.setSelection({'line':0, 'ch':0});
 
       that.displayer = null;
+      $.scrollLock();
     });
+
     v.handler.push(v.namespace + '-' + 'next');
-
-
     v.callback.push(Notes.nextNote);
 
     v.staging.show();
@@ -90,11 +209,14 @@ var Vesperize = (function ($, store) {
   }
 
   // todo(Huascar) find code sections that can be moved to Html
-  function buildNotesSection(v, container){
+  function addsNotesSection(v, container){
 
     var left  = Html.buildHtml('span', {'class': 'tabnav-left'}, {});
 
     v.displayer = Html.buildHtml('span', '', {'class': 'note'});
+    var bookmarked = Html.buildHtml('span', '', {'class': 'octicon octicon-light-bulb'});
+    left.append(bookmarked);
+    left.append(Html.buildHtml('span', {'class':'divider'}, {}));
     left.append(v.displayer);
 
     container.append(left);
@@ -114,11 +236,15 @@ var Vesperize = (function ($, store) {
   // todo(Huascar) find code sections that can be moved to Html
   function replayHistory(v){
 
+    if(v.staging.hasClass('violette-multistage')){
+      v.staging.removeClass('violette-multistage');
+      v.staging.addClass('violette-history btn-toolbar');
+    }
+
+
     v.disableButtons();
     notifyContent('info', v, 'Entering history view');
 
-    v.staging.removeClass('violette-multistage');
-    v.staging.attr('class', 'violette-history');
 
     var top     = Html.buildHtml('div', {
       'class': 'btn-toolbar'
@@ -129,7 +255,7 @@ var Vesperize = (function ($, store) {
       'class': 'btn-toolbar'
     }, {});
 
-    top = buildNotesSection(v, top);
+    top = addsNotesSection(v, top);
 
     var left  = Html.buildHtml('span', {'class': 'tabnav-left'}, {});
     var right = Html.buildHtml('span', {'class': 'tabnav-right'}, {});
@@ -140,19 +266,15 @@ var Vesperize = (function ($, store) {
     });
 
 
-    // todo(Huascar) implement drafts tracking
     var that = v;
     that.codemirror.setOption("readOnly", true);
     function setValue(value, handleElement, slider){
-      // 1. take the value and use it as the index for this.drafts[value]
-      //    to get some data and access it to get the name of the draft
-      // 2. this name will be text to be inserted into the tip html element.
-      // 3. use the select buffer thing to swap documents as the slider
-      //    handle is dragged left or right
-      // 4. WHen exiting, then put the original document back in place
       var idx       = parseInt(value);
       var available = that.drafts.contains(idx);
-      console.log(available);
+      if(!available){
+        that.log.warn("Vesperize#replayHistory. Reason: trying to access a non-existent draft.");
+        return;
+      }
       var draft     = that.drafts.getDraft(idx);
       var name = draft.name;
       var code = draft.after;
@@ -165,11 +287,13 @@ var Vesperize = (function ($, store) {
         that.displayer.text("");
         that.displayer.hide();
         that.staging.css({
-          'height': '25px'
+          'min-height': '25px'
+          , 'height': 'auto'
         });
       } else {
         that.staging.css({
-          'height': '50px'
+          'min-height': '50px'
+          , 'height': 'auto'
         });
         that.displayer.show();
         Notes.nextNote(that);
@@ -206,7 +330,7 @@ var Vesperize = (function ($, store) {
 
     v.handler.push(v.namespace + '-' + 'close');
     v.callback.push(function(that){
-
+      $.scrollLock();
       notifyContent('info', that, 'Exiting history view');
 
       that.staging.children().hide();
@@ -214,8 +338,8 @@ var Vesperize = (function ($, store) {
 
       that.staging.hide();
 
-      deleteButtonHandler(that, that.namespace + '-' + 'close');
-      deleteButtonHandler(that, that.namespace + '-' + 'next');
+      Utils.deleteButtonHandler(that, that.namespace + '-' + 'close');
+      Utils.deleteButtonHandler(that, that.namespace + '-' + 'next');
 
       that.codemirror.setOption("readOnly", false);
       that.enableButtons();
@@ -233,6 +357,7 @@ var Vesperize = (function ($, store) {
       that.history = null;
 
       that.enableButtons();
+      $.scrollLock();
 
     });
 
@@ -417,7 +542,6 @@ var Vesperize = (function ($, store) {
     };
 
     new PNotify(opts);
-
     v.codemirror.focus();
   }
 
@@ -433,6 +557,7 @@ var Vesperize = (function ($, store) {
     var clsName = Matcher.matchClassName(content, defaultClassname) + '.java';
     // extra step to make sure verify functionality gets a good class name
     if (clsName !== className) {
+      e.log.debug("Vesperize#compareAndSetClassName. Updated classname (from=" + e.classname + ", to=" + clsName + ")");
       e.classname = clsName;
       return clsName;
     } else {
@@ -441,10 +566,11 @@ var Vesperize = (function ($, store) {
   }
 
   function persistContent(v, content){
-    // todo(Huascar) collapse into one if consisting of many `and` statements
     if(v.buffers == null && v.history == null && v.displayer == null){
-      v.persist(content);
-      v.status.text('SAVED ');
+      if(v.document == null){
+        v.persist(content);
+        v.status.text('SAVED ');
+      }
     }
   }
 
@@ -459,6 +585,18 @@ var Vesperize = (function ($, store) {
 
         var broken = containsSyntaxErrors(reply);
         if(broken){
+
+          if(ignoreResolveElementWarning(reply.warnings)) {
+            that.log.info("Vesperize#inspectCodeExample. Ignoring `cannot resolve` errors. ");
+            return;
+          }
+
+          that.log.debug(
+            "Vesperize#inspectCodeExample. Code example " +
+            (broken ? "contains" : "doesn't contain") +
+            " compiler errors."
+          );
+
           if (editor.hasClass('active')) {
             editor.removeClass('active');
 
@@ -587,6 +725,19 @@ var Vesperize = (function ($, store) {
    */
   function multiStageCode(v/*Violette*/) {
 
+    if(v.staging.hasClass('violette-history')){
+      v.staging.removeClass('violette-history');
+      v.staging.addClass('violette-multistage btn-toolbar');
+    } else {
+      v.staging.addClass('violette-multistage btn-toolbar');
+    }
+
+    v.staging.css({
+      'min-height': '25px'
+      , 'height': 'auto'
+    });
+
+
     v.disableButtons();
     notifyContent('info', v, 'Entering multistage view');
 
@@ -647,7 +798,7 @@ var Vesperize = (function ($, store) {
       that.codemirror.setOption("readOnly", false);
       that.buffers = null;
 
-      deleteButtonHandler(that, that.namespace + '-' + 'close');
+      Utils.deleteButtonHandler(that, that.namespace + '-' + 'close');
 
       expandEverything(that.codemirror);
 
@@ -691,12 +842,12 @@ var Vesperize = (function ($, store) {
     } else {
       if (reply.info) {
         //noinspection JSUnresolvedVariable
-        console.log(reply.info.messages.join('\n'));
+        v.log.debug(reply.info.messages.join('\n'));
         notifyContent('info', v, reply.info.messages.join('\n'));
         codemirror.focus();
       } else if (reply.warnings) {
         if (silent) {
-          console.log(reply.warnings.join('\n'));
+          v.log.info(reply.warnings.join('\n'));
         } else {
           if (!v.editor.hasClass('broken')) {
             // this class will be removed
@@ -725,6 +876,7 @@ var Vesperize = (function ($, store) {
             : reply.failure.message
         );
 
+        v.log.error("Kiwi misbehaved: " + error);
         notifyContent('error', v, error);
       }
     }
@@ -767,6 +919,8 @@ var Vesperize = (function ($, store) {
             v.classname = compareAndSetClassName(content, v.classname, v);
             // extract selection range
             var range = Utils.selectionOffsets(codemirror, content, selection);
+
+            $.scrollLock();
             // check if its comment
             if (Matcher.isComment(selection)) {
               // if the selection is a comment, then remove it
@@ -778,6 +932,8 @@ var Vesperize = (function ($, store) {
               Refactoring.format(v.classname, content, function (reply) {
                 handleReply(v, reply);
                 v.lastaction = 'Delete comment';
+                v.log.info("Vesperize#delete. Deleting code section containing a comment. No Preprocessing required.");
+                $.scrollLock();
               });
 
             } else {
@@ -788,7 +944,9 @@ var Vesperize = (function ($, store) {
                   var preprocess = requiresPreprocessing(reply);
                   Refactoring.deleteSelection(
                     v.classname, content, range, preprocess, function (reply) {
+                      v.log.info("Vesperize#delete. Deleting a code section. Preprocessing detected (" + preprocess + ").");
                       handleReply(v, reply);
+                      $.scrollLock();
                     }
                   );
 
@@ -802,7 +960,7 @@ var Vesperize = (function ($, store) {
       },
       {
         name: 'clip'
-        , title: 'Clip a code selection'
+        , title: 'Clip a method'
         , icon: 'octicon octicon-clippy'
         , callback: function (v/*Violette*/) {
           var codemirror = v.codemirror;
@@ -822,13 +980,15 @@ var Vesperize = (function ($, store) {
             } else {
               v.classname = compareAndSetClassName(content, v.classname, v);
               var range = Utils.selectionOffsets(codemirror, content, selection);
-
+              $.scrollLock();
               Refactoring.detectPartialSnippet(v.classname,
                 content, function(reply){
                   var preprocess = requiresPreprocessing(reply);
                   Refactoring.clipSelectedBlock(v.classname, content, range,
                     preprocess, function (reply) {
+                      v.log.info("Vesperize#clip. Clipping a code section. Preprocessing detected (" + preprocess + ").");
                       handleReply(v, reply);
+                      $.scrollLock();
                     }
                   );
                 }
@@ -850,12 +1010,14 @@ var Vesperize = (function ($, store) {
           if ("" == content) return;
 
           v.classname = compareAndSetClassName(content, v.classname, v);
-
+          $.scrollLock();
           Refactoring.detectPartialSnippet(v.classname, content,
             function (reply) {
               var preprocess = requiresPreprocessing(reply);
               Refactoring.fullCleanup(v.classname, content, preprocess, function (reply) {
+                v.log.info("Vesperize#cleanup. Cleaning code example. Preprocessing detected (" + preprocess + ").");
                 handleReply(v, reply);
+                $.scrollLock();
               });
             }
           );
@@ -881,6 +1043,7 @@ var Vesperize = (function ($, store) {
 
           v.classname = compareAndSetClassName(content, v.classname, v);
 
+          $.scrollLock();
           var other = codemirror;
           openInputDialog(codemirror, Html.buildInput('New Name?').html(), "Enter new name:", selection, function(description){
             other.operation(function(){
@@ -892,7 +1055,9 @@ var Vesperize = (function ($, store) {
                     var preprocess = requiresPreprocessing(reply);
                     Refactoring.renameSelectedMember(v.classname, description,
                       content, range, preprocess, function (reply) {
-                      handleReply(v, reply);
+                        v.log.info("Vesperize#rename. Renaming a selected class member. Preprocessing detected (" + preprocess + ").");
+                        handleReply(v, reply);
+                        $.scrollLock();
                     });
                   }
                 );
@@ -912,6 +1077,7 @@ var Vesperize = (function ($, store) {
           var codemirror = v.codemirror;
 
           var other = codemirror;
+          $.scrollLock();
           // opens a dialog
           openInputDialog(codemirror, Html.buildInput().html(), "Annotates selection:", "", function(description){
               other.operation(function(){
@@ -921,7 +1087,8 @@ var Vesperize = (function ($, store) {
                  var location  = Utils.selectionLocation(other, content, selection);
                  var note = Notes.buildNote(description, location, Notes.chunkContent(content, location));
                  v.notes.addNote(note);
-                 console.log(v.notes.size());
+                 v.log.info("Vesperize#annotate. Annotating a selected code section. Notes size (" + v.notes.size() + ").");
+                 $.scrollLock();
               });
 
           });
@@ -934,10 +1101,12 @@ var Vesperize = (function ($, store) {
         , 'label': 'Stage'
         , callback: function(v){
 
-          if(v.buffers != null && Object.keys(v.buffers).length > 0) {
+          if(v.buffers != null) {
             v.codemirror.focus();
             return;
           }
+
+          v.buffers = {}; // This will prevent multi-stage-event triggering more then once
 
           var codemirror = v.codemirror;
           var content = codemirror.getValue();
@@ -946,14 +1115,16 @@ var Vesperize = (function ($, store) {
           if ("" == content) return;
 
           v.classname = compareAndSetClassName(content, v.classname, v);
-
+          $.scrollLock();
           Refactoring.detectPartialSnippet(v.classname, content,
             function (reply) {
               //name, content, preprocess, callback
               var preprocess = requiresPreprocessing(reply);
               Refactoring.multistageCode(
                 v.classname, content, preprocess, function (reply) {
+                  v.log.info("Vesperize#stage. Multistaging the code example.");
                   handleReply(v, reply);
+                  $.scrollLock();
                 }
               );
 
@@ -974,8 +1145,10 @@ var Vesperize = (function ($, store) {
           }
 
           if(!v.drafts.empty()){
+            v.log.info("Vesperize#history. Replaying history. Drafts (" + v.drafts.size() + ")");
             replayHistory(v);
           } else {
+            v.log.warn("Vesperize#history. You have no marked drafts.");
             notifyContent('notice', v, 'You have no marked drafts');
           }
         }
@@ -986,8 +1159,10 @@ var Vesperize = (function ($, store) {
         , 'label': 'Notes'
         , callback: function(v){
            if(v.notes.size() > 0 ){
+             v.log.info("Vesperize#notes. Launching notes. Notes (" + v.notes.size() + ")");
              creatingNotesSection(v);
            } else {
+             v.log.warn("Vesperize#notes. You have no notes.");
              notifyContent('notice', v, 'You have not annotated anything');
            }
            v.codemirror.focus();
@@ -995,6 +1170,71 @@ var Vesperize = (function ($, store) {
       }
     ]
     , 'modes':  [
+      { name: 'download'
+        , title: 'Bring code example to desktop'
+        , icon: 'octicon octicon-device-desktop'
+        , label: 'Bring it to Desktop'
+        , callback: function (v/*Vesperize*/) {
+
+          var codemirror = v.codemirror;
+          var content = codemirror.getValue();
+
+          // nothing to refactor.
+          if ("" == content) return;
+
+          v.classname = compareAndSetClassName(content, v.classname, v);
+
+          function placeText(text) {
+            return '\n' + text + '\n';
+          }
+
+
+          var other = codemirror;
+          var that  = v;
+          $.scrollLock();
+          // opens a dialog
+          openInputDialog(codemirror, Html.buildInput("Describe code").html(), "Describe example:", "", function(description){
+            other.operation(function(){
+              that.description = (Utils.isStringEmpty(description)) ? that.description : description;
+              var header = that.classname;
+              var url    = document.location.href;
+              var textToWrite = header +
+                placeText('from ' + url) +
+                '\n' +
+                placeText(that.description);
+
+              textToWrite     = textToWrite +
+              '\n' + '~~~' +
+              placeText(content) +
+              '~~~' + '\n';
+
+              var notes = that.notes.toHashArray();
+              var len   = notes.length;
+
+              for(var idx = 0; idx < len; idx++){
+                var note = notes[idx];
+                if(note){
+
+                  var from = parseInt(note.from.split(';')[0]) + 1;
+                  var to   = parseInt(note.to.split(';')[0]) + 1;
+
+                  var rangeText = '[' + from + '-' + to + ']';
+
+                  textToWrite     = textToWrite + placeText(rangeText + ': ' + note.text);
+                }
+              }
+
+
+              var blob = new Blob([textToWrite], {type: "text/plain;charset=utf-8"});
+              saveAs(blob, header + '.txt');
+              that.log.info("Vesperize#dowload. Bringing example to desktop. Task lasted (" + that.stopwatch.toString() + ")");
+              $.scrollLock();
+              other.focus();
+            });
+
+          });
+        }
+      }
     ]
     , 'social': [
       {
@@ -1019,6 +1259,7 @@ var Vesperize = (function ($, store) {
 
           v.classname = compareAndSetClassName(content, v.classname, v);
 
+          $.scrollLock();
           var that = v;
           Refactoring.format(v.classname, content, function(reply){
              if(reply.draft){
@@ -1033,10 +1274,24 @@ var Vesperize = (function ($, store) {
                  if(reply.info){
                    that.tinyUrl     = reply.info.messages[1];
                    that.exampleId   = reply.info.messages[2];
+                   that.log.info("Vesperize#share. Sharing + saving code example. Example ID (" + that.exampleId + ")");
                    shareDialog(that, "Anyone with this link can see your fantastic work", that.tinyUrl);
                  } else {
+
+                   var foundWarnings = ((typeof(reply.warnings) !== 'undefined' && reply.warnings.length > 0));
+                   var foundFailures = ((typeof(reply.failure) !== 'undefined'));
+                   var reason = (foundWarnings
+                     ? (': ' + reply.warnings.join(','))
+                     : (foundFailures ? (': ' + reply.failure.message) : '')
+                   );
+
+                   reason = reason + '.';
+
+                   that.log.error("Vesperize#share. Unable to save your code example" + reason);
                    notifyContent('error', that, "Unable to save your code example")
                  }
+
+                 $.scrollLock();
                });
 
              }
@@ -1048,7 +1303,8 @@ var Vesperize = (function ($, store) {
         , title: 'Document curated example.'
         , label: 'DOCUMENT'
         , callback: function (v/*Vesperize*/) {
-
+          v.log.info("Vesperize#document. Launching documentation mode.");
+          v.document = new Document(v);
         }
       }
     ]
@@ -1082,10 +1338,13 @@ var Vesperize = (function ($, store) {
     this.sloc       = null;
     this.staging    = null;
 
-    // history
+    // history (edit tracker)
     this.drafts     = new Drafts(this.primaryKey);
-    this.history    = null; // edit tracker
+    this.history    = null;
     this.lastaction = null;
+
+    // logging
+    this.log        = new Logger(this.primaryKey);
 
     // notes
     this.notes      = new Notes(this.primaryKey);
@@ -1101,6 +1360,12 @@ var Vesperize = (function ($, store) {
     this.buffers        = null; // store button LIVE stages
     this.indexes        = [];
 
+    this.description = 'Java: *scratched* code snippet';
+    this.tags        = [];
+    this.confidence  = 5;
+    this.document    = null;
+
+    // notifications on the side
     this.parent     = this.element.parent('div.post-text');
     this.context    = {
       "dir1": "down",
@@ -1109,37 +1374,9 @@ var Vesperize = (function ($, store) {
     };
 
     PNotify.removeAll(); // remove any notification element (just in case)
+    configuresPNotify();
 
-    // must be initialize in other to use octicon icons
-    // for their alerts
-    PNotify.prototype.options.styling = "octicon";
-    PNotify.prototype.options.delay   = 4000;
-    PNotify.prototype.options.confirm = {
-      // Make a confirmation box.
-      confirm: false,
-      // Make a prompt.
-      prompt: false,
-      // Classes to add to the input element of the prompt.
-      prompt_class: "",
-      // The default value of the prompt.
-      prompt_default: "",
-      // Whether the prompt should accept multiple lines of text.
-      prompt_multi_line: false,
-      // Where to align the buttons. (right, center, left, justify)
-      align: "right",
-      buttons: [
-        {
-          text: "Ok",
-          addClass: "",
-          // Whether to trigger this button when the user hits enter in a single line prompt.
-          promptTrigger: true,
-          click: function(notice, value){
-            notice.remove();
-            notice.get().trigger("pnotify.confirm", [notice, value]);
-          }
-        }
-      ]
-    };
+    this.log.info("Initializing Violette");
 
     this.init();
 
@@ -1211,10 +1448,12 @@ var Vesperize = (function ($, store) {
           matchBrackets: true,
           extraKeys: {
             "Ctrl-Q": function (cm) {
+              that.log.info("Pressing Ctrl-Q to force folding of code block.");
               //noinspection JSUnresolvedFunction
               cm.foldCode(cm.getCursor());
             }
             , "Ctrl-S": function(cm){
+              that.log.info("Pressing Ctrl-S to force saving example and marking a draft.");
               markNewDraft(that, cm.getValue());
               persistContent(that, cm.getValue());
               inspectCodeExample(that, cm.getValue());
@@ -1258,7 +1497,6 @@ var Vesperize = (function ($, store) {
    * Private: bind HTML element to their respective listeners
    */
   Vesperize.prototype.bindElements = function () {
-
     this.editor.on(
       'click', '[data-provider="violette-scratchspace"]',
       $.proxy(this.handleClickEvent, this)
@@ -1285,19 +1523,25 @@ var Vesperize = (function ($, store) {
     // if editing, then change the status
     this.codemirror.on('beforeChange', function(instance, change){
       that.status.text('NOT SAVED ');
-      console.log(change.origin);
       instance.old = instance.getValue();
     });
 
     this.codemirror.on('change', function(instance, change){
-      console.log(change.origin);
-      if(instance.old !== instance.getValue() && that.tinyUrl !== null){
-        notifyContent('info', that, "Saving NEW code example");
-        // If so, then the current is becoming a new code example
-        that.tinyUrl    = null;
-        that.stopwatch  = new Stopwatch();
-        instance.old    = null; // cleaning our stuff afterwards
+      // since we are setting a value when replaying history
+      // , we set the tinyUrl to null. The solution is to make sure
+      // we don't fall for this use case
+      // erase above text if test passes
+      if(that.buffers == null && that.history == null && that.displayer == null){
+        if(instance.old !== instance.getValue() && that.tinyUrl !== null){
+          notifyContent('info', that, "Saving NEW code example");
+          // If so, then the current is becoming a new code example
+          that.tinyUrl    = null;
+          that.stopwatch  = new Stopwatch();
+        }
       }
+
+      instance.old    = null; // cleaning our stuff afterwards
+
     });
 
     // makes sure that when we exit fullscreen mode
@@ -1319,7 +1563,10 @@ var Vesperize = (function ($, store) {
     }, 250, false);
 
     //noinspection JSUnresolvedVariable
-    this.editor.on(screenfull.raw.fullscreenchange, efficientUiChangesFullscreenCallback);
+    this.editor.on(
+      screenfull.raw.fullscreenchange,
+      efficientUiChangesFullscreenCallback
+    );
   };
 
 
@@ -1399,6 +1646,25 @@ var Vesperize = (function ($, store) {
 
     }
 
+    // 3. description + tags + confidence
+    var desc = store.get(this.primaryKey + 'desc');
+    if(desc){
+      this.description = desc;
+    }
+
+    var tags = store.get(this.primaryKey + 'tags');
+    if(tags){
+      this.tags = [];
+      for(var t = 0; t < tags.length; t++){
+        this.tags.push(tags[t]);
+      }
+    }
+
+    var conf = store.get(this.primaryKey + 'confidence');
+    if(conf){
+      this.confidence = parseInt(conf);
+    }
+
     return this;
   };
 
@@ -1452,18 +1718,22 @@ var Vesperize = (function ($, store) {
     var key = this.primaryKey + 'eid';
     var eid = this.exampleId || null;
 
-    var localEid = store.get(key);
-    if(localEid !== eid){
-      store.set(key, eid);
-    }
+    // this covers the tinyUrl null checking since both attributes
+    // are updated together
+    if(eid !== null){
+      var localEid = store.get(key);
+      if(localEid !== eid){
+        store.set(key, eid);
+      }
 
-    // save tinyUrl
-    key = this.primaryKey + 'tinyUrl';
-    var turl = this.tinyUrl || null;
-    var localTinyUrl = store.get(key);
+      // save tinyUrl
+      key = this.primaryKey + 'tinyUrl';
+      var turl = this.tinyUrl;
+      var localTinyUrl = store.get(key);
 
-    if(localTinyUrl !== turl){
-      store.set(key, turl);
+      if(localTinyUrl !== turl){
+        store.set(key, turl);
+      }
     }
 
     // save drafts
@@ -1486,6 +1756,24 @@ var Vesperize = (function ($, store) {
       store.set(key, notes);
     }
 
+    // save description + tags + confidence
+    key      = this.primaryKey + 'desc';
+    var desc = store.get(key);
+    if(store.serialize(desc) !== store.serialize(this.description)){
+      store.set(key, this.description);
+    }
+
+    key      = this.primaryKey + 'tags';
+    var tags = store.get(key);
+    if(store.serialize(tags) !== store.serialize(this.tags)){
+      store.set(key, this.tags);
+    }
+
+    key      = this.primaryKey + 'confidence';
+    var conf = store.get(key);
+    if(store.serialize(conf) !== store.serialize(this.confidence)){
+      store.set(key, this.confidence);
+    }
 
     return this;
   };
@@ -1546,11 +1834,15 @@ var Vesperize = (function ($, store) {
     // Blur other scratchspaces
     $(document).find('.violette-editor').each(function(){
       if ($(this).attr('id') != editor.attr('id')) {
-        var attachedScratchspace = $(this).find('textarea').data('scratchspace');
+        var attachedScratchspace = $(this)
+          .find('textarea')
+          .data('scratchspace');
 
 
         if (attachedScratchspace == null) {
-          attachedScratchspace = $(this).find('div[data-provider="violette-preview"]').data('scratchspace')
+          attachedScratchspace = $(this)
+            .find('div[data-provider="violette-preview"]')
+            .data('scratchspace')
         }
 
         if (attachedScratchspace) {

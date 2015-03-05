@@ -4,6 +4,18 @@
 var Utils = (function ($, module) {
   "use strict";
 
+  function deleteButtonHandler(v, name){
+    var handlerIndex = v.handler.indexOf(name);
+    if(handlerIndex > -1){
+      delete v.handler[handlerIndex];
+      delete v.callback[handlerIndex];
+      v.log.debug(name + " handler was deleted");
+    }
+  }
+
+  function isStringEmpty(text){
+    return text == null || text.length == 0;
+  }
 
   function contains(array, target){
     var i = array.length;
@@ -190,6 +202,25 @@ var Utils = (function ($, module) {
   }
 
   /**
+   * Creates the range of text to select and selects it
+   */
+  module.selectText = function(element) {
+    var range, selection;
+
+    if (document.body.createTextRange) {
+      range = document.body.createTextRange();
+      range.moveToElementText(element);
+      range.select();
+    } else if (window.getSelection) {
+      selection = window.getSelection();
+      range = document.createRange();
+      range.selectNodeContents(element);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  };
+
+  /**
    * Creates a location object (range of a selection)
    *
    * @param contents code example content
@@ -280,8 +311,6 @@ var Utils = (function ($, module) {
 
         location = module.createLocation(content, offsetStart, offsetEnd);
 
-        console.log(offsetStart + " - " + offsetEnd);
-
         break;
       } else {
         count += lines[i].length;
@@ -322,7 +351,7 @@ var Utils = (function ($, module) {
   module.createCode = function (name, description,
                                 content, tags, datastructures,
                                 algorithms, refactorings,
-                                confidence, comments, elapsedtime) {
+                                confidence, comments, elapsedtime, id) {
     tags = tags || [];
     datastructures = datastructures || [];
     algorithms = algorithms || [];
@@ -330,12 +359,14 @@ var Utils = (function ($, module) {
     confidence = confidence || 0;
     comments = comments || [];
     elapsedtime = elapsedtime || "";
+    id          = id || "new";
 
     var url = document.location.href;
     var birthday = Date.now();
 
     description = description || 'Java: *scratched* code snippet';
     return {
+      'id': id,
       'name': name,
       'description': description,
       'content': content,
@@ -357,6 +388,9 @@ var Utils = (function ($, module) {
   module.count      = countSloc;
   module.getContent = getContent;
   module.contains   = contains;
+
+  module.deleteButtonHandler  = deleteButtonHandler;
+  module.isStringEmpty        = isStringEmpty;
 
   return module;
 

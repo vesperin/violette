@@ -10,6 +10,7 @@
   "use strict";
 
   var COUNTER = 0;
+  LE.init('2e1a6f53-37b0-4cd2-9252-cd4ed1734b19');
 
   function alterPretags(preElement) {
     preElement.attr('data-provide', 'violette-editable');
