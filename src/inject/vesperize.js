@@ -1360,8 +1360,6 @@ var Vesperize = (function ($, store) {
     this.buffers        = null; // store button LIVE stages
     this.indexes        = [];
 
-    // todo(Huascar) persist this information
-    // documentation mode
     this.description = 'Java: *scratched* code snippet';
     this.tags        = [];
     this.confidence  = 5;
