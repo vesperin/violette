@@ -72,6 +72,7 @@
         "js/jquery/jquery.tooltipster.min.js",
         "js/jquery/pnotify.custom.min.js",
         "js/jquery/jquery.barrating.min.js",
+        "js/jquery/jquery.scrollLock.js",
         "js/jquery/tagging.js",
         "js/screenfull/screenfull.min.js",
         "js/jquery/idle-timer.min.js",

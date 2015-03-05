@@ -914,6 +914,8 @@ var Vesperize = (function ($, store) {
             v.classname = compareAndSetClassName(content, v.classname, v);
             // extract selection range
             var range = Utils.selectionOffsets(codemirror, content, selection);
+
+            $.scrollLock();
             // check if its comment
             if (Matcher.isComment(selection)) {
               // if the selection is a comment, then remove it
@@ -926,6 +928,7 @@ var Vesperize = (function ($, store) {
                 handleReply(v, reply);
                 v.lastaction = 'Delete comment';
                 v.log.info("Vesperize#delete. Deleting code section containing a comment. No Preprocessing required.");
+                $.scrollLock();
               });
 
             } else {
@@ -938,6 +941,7 @@ var Vesperize = (function ($, store) {
                     v.classname, content, range, preprocess, function (reply) {
                       v.log.info("Vesperize#delete. Deleting a code section. Preprocessing detected (" + preprocess + ").");
                       handleReply(v, reply);
+                      $.scrollLock();
                     }
                   );
 
@@ -971,7 +975,7 @@ var Vesperize = (function ($, store) {
             } else {
               v.classname = compareAndSetClassName(content, v.classname, v);
               var range = Utils.selectionOffsets(codemirror, content, selection);
-
+              $.scrollLock();
               Refactoring.detectPartialSnippet(v.classname,
                 content, function(reply){
                   var preprocess = requiresPreprocessing(reply);
@@ -979,6 +983,7 @@ var Vesperize = (function ($, store) {
                     preprocess, function (reply) {
                       v.log.info("Vesperize#clip. Clipping a code section. Preprocessing detected (" + preprocess + ").");
                       handleReply(v, reply);
+                      $.scrollLock();
                     }
                   );
                 }
@@ -1000,13 +1005,14 @@ var Vesperize = (function ($, store) {
           if ("" == content) return;
 
           v.classname = compareAndSetClassName(content, v.classname, v);
-
+          $.scrollLock();
           Refactoring.detectPartialSnippet(v.classname, content,
             function (reply) {
               var preprocess = requiresPreprocessing(reply);
               Refactoring.fullCleanup(v.classname, content, preprocess, function (reply) {
                 v.log.info("Vesperize#cleanup. Cleaning code example. Preprocessing detected (" + preprocess + ").");
                 handleReply(v, reply);
+                $.scrollLock();
               });
             }
           );
@@ -1032,6 +1038,7 @@ var Vesperize = (function ($, store) {
 
           v.classname = compareAndSetClassName(content, v.classname, v);
 
+          $.scrollLock();
           var other = codemirror;
           openInputDialog(codemirror, Html.buildInput('New Name?').html(), "Enter new name:", selection, function(description){
             other.operation(function(){
@@ -1045,6 +1052,7 @@ var Vesperize = (function ($, store) {
                       content, range, preprocess, function (reply) {
                         v.log.info("Vesperize#rename. Renaming a selected class member. Preprocessing detected (" + preprocess + ").");
                         handleReply(v, reply);
+                        $.scrollLock();
                     });
                   }
                 );
@@ -1064,6 +1072,7 @@ var Vesperize = (function ($, store) {
           var codemirror = v.codemirror;
 
           var other = codemirror;
+          $.scrollLock();
           // opens a dialog
           openInputDialog(codemirror, Html.buildInput().html(), "Annotates selection:", "", function(description){
               other.operation(function(){
@@ -1074,6 +1083,7 @@ var Vesperize = (function ($, store) {
                  var note = Notes.buildNote(description, location, Notes.chunkContent(content, location));
                  v.notes.addNote(note);
                  v.log.info("Vesperize#annotate. Annotating a selected code section. Notes size (" + v.notes.size() + ").");
+                 $.scrollLock();
               });
 
           });
@@ -1100,7 +1110,7 @@ var Vesperize = (function ($, store) {
           if ("" == content) return;
 
           v.classname = compareAndSetClassName(content, v.classname, v);
-
+          $.scrollLock();
           Refactoring.detectPartialSnippet(v.classname, content,
             function (reply) {
               //name, content, preprocess, callback
@@ -1109,6 +1119,7 @@ var Vesperize = (function ($, store) {
                 v.classname, content, preprocess, function (reply) {
                   v.log.info("Vesperize#stage. Multistaging the code example.");
                   handleReply(v, reply);
+                  $.scrollLock();
                 }
               );
 
@@ -1154,6 +1165,11 @@ var Vesperize = (function ($, store) {
       }
     ]
     , 'modes':  [
+      { name: 'options'
+        , title: 'More options'
+        , icon: 'octicon octicon-gear'
+        , callback: function (v/*Vesperize*/) {}
+      }
     ]
     , 'social': [
       {
@@ -1178,6 +1194,7 @@ var Vesperize = (function ($, store) {
 
           v.classname = compareAndSetClassName(content, v.classname, v);
 
+          $.scrollLock();
           var that = v;
           Refactoring.format(v.classname, content, function(reply){
              if(reply.draft){
@@ -1208,6 +1225,8 @@ var Vesperize = (function ($, store) {
                    that.log.error("Vesperize#share. Unable to save your code example" + reason);
                    notifyContent('error', that, "Unable to save your code example")
                  }
+
+                 $.scrollLock();
                });
 
              }
@@ -1473,7 +1492,10 @@ var Vesperize = (function ($, store) {
     }, 250, false);
 
     //noinspection JSUnresolvedVariable
-    this.editor.on(screenfull.raw.fullscreenchange, efficientUiChangesFullscreenCallback);
+    this.editor.on(
+      screenfull.raw.fullscreenchange,
+      efficientUiChangesFullscreenCallback
+    );
   };
 
 
@@ -1700,11 +1722,15 @@ var Vesperize = (function ($, store) {
     // Blur other scratchspaces
     $(document).find('.violette-editor').each(function(){
       if ($(this).attr('id') != editor.attr('id')) {
-        var attachedScratchspace = $(this).find('textarea').data('scratchspace');
+        var attachedScratchspace = $(this)
+          .find('textarea')
+          .data('scratchspace');
 
 
         if (attachedScratchspace == null) {
-          attachedScratchspace = $(this).find('div[data-provider="violette-preview"]').data('scratchspace')
+          attachedScratchspace = $(this)
+            .find('div[data-provider="violette-preview"]')
+            .data('scratchspace')
         }
 
         if (attachedScratchspace) {
