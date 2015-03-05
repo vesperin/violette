@@ -1227,6 +1227,7 @@ var Vesperize = (function ($, store) {
 
               var blob = new Blob([textToWrite], {type: "text/plain;charset=utf-8"});
               saveAs(blob, header + '.txt');
+              that.log.info("Vesperize#dowload. Bringing example to desktop. Task lasted (" + that.stopwatch.toString() + ")");
               $.scrollLock();
               other.focus();
             });
